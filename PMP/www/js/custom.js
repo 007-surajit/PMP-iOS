@@ -308,7 +308,7 @@ function checkNewDataFromServer()
 			if(localStorage.getItem("LastFromIvrTime") == null) {
 				if(auditListRequestInProgress == false) {
 					localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
-					//downloadAuditList();
+					downloadAuditList();
 					/*if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {
 						if(navigator.notification) {
 							navigator.notification.beep();
@@ -320,7 +320,7 @@ function checkNewDataFromServer()
 					// download audit list from server
 					if(auditListRequestInProgress == false) {
 						localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
-						//downloadAuditList();
+						downloadAuditList();
 						if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {	
 							if(navigator.notification) {
 								navigator.notification.beep();
@@ -332,21 +332,21 @@ function checkNewDataFromServer()
 			if(localStorage.getItem("MaxToIvrBatch") == null) {
 				if(outstandingListRequestInProgress == false) {
 					localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
-					//downloadOutstandingList();
+					downloadOutstandingList();
 				}
 			}else{
 				if(localStorage.getItem("MaxToIvrBatch") != data.MaxToIvrBatch) {
 					// download outstanding job list from server
 					if(outstandingListRequestInProgress == false) {
 						localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
-						//downloadOutstandingList();
+						downloadOutstandingList();
 					}
 				}
 			}
 			if(localStorage.getItem("MaxQueryToPdarBatch") == null) {
 				if(queryListRequestInProgress == false) {
 					localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
-					//downloadQueryList();
+					downloadQueryList();
 					/*if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
 						if(navigator.notification) {
 								navigator.notification.beep();
@@ -358,7 +358,7 @@ function checkNewDataFromServer()
 					// download query list from server
 					if(queryListRequestInProgress == false) {
 						localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
-						//downloadQueryList();
+						downloadQueryList();
 						if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
 							if(navigator.notification) {
 								navigator.notification.beep();
@@ -565,7 +565,7 @@ function dropAuditListTableComplete() {
 }
 
 function createAuditListTable(tx) {
-     tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
+     tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_nr ,dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
 }
 
 function createAuditListTableComplete() {
@@ -579,11 +579,11 @@ function saveAuditListDataToDb(serviceResponseForAuditList,k)
     if (k < serviceResponseForAuditList.length) {
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-            tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
-              [serviceResponseForAuditList[k].cont_nr, serviceResponseForAuditList[k].cont_inv_nr, serviceResponseForAuditList[k].del_terr_cd, serviceResponseForAuditList[k].dist_net_cd, serviceResponseForAuditList[k].area_cd, serviceResponseForAuditList[k].ivr_serv_dtime, serviceResponseForAuditList[k].ivr_user_dtime, serviceResponseForAuditList[k].batch, serviceResponseForAuditList[k].DeliveryDay, serviceResponseForAuditList[k].DeliveryDate],function(){},function(){savingAuditListDataToDb = false});
-        }, function(){savingAuditListDataToDb = false}, function successCB() {
-            /* Recursive Function For Inserting the State in Local Db */
-            saveAuditListDataToDb(serviceResponseForAuditList, (k + 1));
+          tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
+                        [serviceResponseForAuditList[k].cont_nr, serviceResponseForAuditList[k].cont_inv_nr, serviceResponseForAuditList[k].del_terr_cd,serviceResponseForAuditList[k].dist_nr, serviceResponseForAuditList[k].dist_net_cd, serviceResponseForAuditList[k].area_cd, serviceResponseForAuditList[k].ivr_serv_dtime, serviceResponseForAuditList[k].ivr_user_dtime, serviceResponseForAuditList[k].batch, serviceResponseForAuditList[k].DeliveryDay, serviceResponseForAuditList[k].DeliveryDate],function(){},function(){savingAuditListDataToDb = false});
+          }, function(){savingAuditListDataToDb = false}, function successCB() {
+          /* Recursive Function For Inserting the State in Local Db */
+          saveAuditListDataToDb(serviceResponseForAuditList, (k + 1));
         });
     }
     else {
@@ -904,7 +904,7 @@ function getAuditList()
 	  {
 			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr
 			//console.log(JSON.stringify(data));			
-			/*data= {"from_ivr":[{"cont_nr":9808236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9806236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9808636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9908636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918736,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"A","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":moment(),"ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null}]};*/
+			data= {"from_ivr":[{"cont_nr":9808236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9806236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9808636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9908636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918736,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"A","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":moment(),"ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null}]};
 			auditListRequestInProgress = false;	 
 			auditSuccess(data);
       },
@@ -936,7 +936,8 @@ function auditSuccess(data)
 		$.each(data.from_ivr, function(i,audits){
 			//console.log(JSON.stringify(audits));
 			tempHTML =  audit_template_html;
-			tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.area_cd);
+            tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, audits.area_cd);
+            tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
 			tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, audits.cont_inv_nr);
 			tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, audits.cont_nr);		
 			tempHTML = tempHTML.replace(/{{IVR_SERV_DTIME}}/gi, moment(audits.ivr_serv_dtime).format("DD MMM YYYY HH:mm"));
@@ -1058,7 +1059,8 @@ function auditSuccessOffline(tx, results) {
 		for(i =0; i < len; i++){
 						
 			tempHTML =  audit_template_html;
-			tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, results.rows.item(i).area_cd);
+            tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, results.rows.item(i).area_cd);
+            tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, results.rows.item(i).dist_nr);
 			tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, results.rows.item(i).cont_inv_nr);
 			tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, results.rows.item(i).cont_nr);		
 			tempHTML = tempHTML.replace(/{{IVR_SERV_DTIME}}/gi, moment(results.rows.item(i).ivr_serv_dtime).format("DD MMM YYYY HH:mm"));
@@ -1132,17 +1134,18 @@ function auditSuccessOffline(tx, results) {
     }	
 }
 
-function deliveryCheck(walker_no,cw,dt,area,dist_net)
+function deliveryCheck(walker_no,cw,dt,area,dist_net,dist_nr)
 {
-		
-	//console.log(walker_no+'-'+cw+'-'+dt+'-'+area+'-'+dist_net);	
-	localStorage.setItem("AUDIT_WALKER_NO",walker_no);
-	localStorage.setItem("AUDIT_CW",cw);	
-	localStorage.setItem("AUDIT_DT",dt);
-	localStorage.setItem("AUDIT_AREA",area);
-	localStorage.setItem("DIST_NET_CODE",dist_net);
-	goTo('deliverycheck');
-	
+    
+    //console.log(walker_no+'-'+cw+'-'+dt+'-'+area);
+    localStorage.setItem("AUDIT_WALKER_NO",walker_no);
+    localStorage.setItem("AUDIT_CW",cw);
+    localStorage.setItem("AUDIT_DT",dt);
+    localStorage.setItem("AUDIT_AREA",area);
+    localStorage.setItem("DIST_NET_CODE",dist_net);
+    localStorage.setItem("CHECK_DIST_NR",dist_nr);
+    goTo('deliverycheck');
+    
 }
 
 function getAuditDetail()
@@ -1330,7 +1333,8 @@ function saveDeliveryChecksDataToDb(deliveryCheckConfirmations,l)
 		console.log("Remove Audit from database");
 	    localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	    localDatabaseInstance.transaction(function removeAudit(tx) {
-		sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_inv_nr = " + localStorage.getItem("AUDIT_CW");
+		//sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_inv_nr = " + localStorage.getItem("AUDIT_CW");
+        sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_nr = " + localStorage.getItem("AUDIT_WALKER_NO")+" AND cont_inv_nr = " + localStorage.getItem("AUDIT_CW")+" AND dist_nr = " + localStorage.getItem("CHECK_DIST_NR")+" AND del_terr_cd = " + localStorage.getItem("AUDIT_DT");
 		tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);goBack('delivery_audit')}, function(){goBack('delivery_audit')});	   	
     }
 }
@@ -1478,7 +1482,7 @@ function getOutstandingJobs()
       {
 			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr
 			
-			/*data = {"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]};*/
+			data = {"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]};
 			outstandingListRequestInProgress = false;
 			if(data.to_ivr && data.to_ivr.length)
 			{
@@ -1689,7 +1693,7 @@ function getQueryList()
       {
 			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr	
 			downloadReasons();
-			/*data = {"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]};*/			
+			data = {"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]};
 			queryListRequestInProgress = false;
 			if(data.queries_to_pda && data.queries_to_pda.length)
 			{				
