@@ -38,17 +38,21 @@ function goBack(page)
 	$.mobile.changePage( page+".html", { transition: "slide" , reverse: true} );
 }
 
-function popUp(dt,cw,cont_nr,dist_nr)
+function popUp(dt,cw,cont_nr,dist_nr,area_cd,dist_net_cd)
 {
 	$('span.del_terr_cd').html(dt);
 	$('span.cont_inv_nr').html(cw);
 	
 	localStorage.setItem("JOB_DEL_TERR_CD",dt);
-	localStorage.setItem("JOB_CONT_INV_NR",cw);	
+	localStorage.setItem("JOB_CONT_INV_NR",cw);
 	localStorage.setItem("JOB_CONT_NR",cont_nr);
-	localStorage.setItem("JOB_DIST_NR",dist_nr);	
+	localStorage.setItem("JOB_DIST_NR",dist_nr);
+	localStorage.setItem("JOB_AREA_CD",area_cd);
+	localStorage.setItem("JOB_DIST_NET_CD",dist_net_cd);
 	
-	var d1 = document.getElementById('Outstandingjob');    
+	console.log('popup');
+    
+    var d1 = document.getElementById('Outstandingjob');
     
 	var d2 = document.getElementById('confirmation');	
 	
@@ -111,13 +115,15 @@ function closePopUp()
 }
 
 
-function outstandingJobObject(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime)
+function outstandingJobObject(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime,area_cd,dist_net_cd)
 {
 	this.cont_nr = cont_nr;
 	this.cont_inv_nr = cont_inv_nr;
 	this.del_terr_cd = del_terr_cd;
 	this.dist_nr = dist_nr;
 	this.utcTime = utcTime;
+	this.area_cd = area_cd;
+	this.dist_net_cd = dist_net_cd;
 }
 
 function markJobAsComplete()
@@ -125,9 +131,11 @@ function markJobAsComplete()
 	//console.log('del_terr_cd'+$('span.del_terr_cd').first().html());
 	//console.log('cont_inv_nr'+$('span.cont_inv_nr').first().html());
 	showLoader();
+	//localStorage.setItem("JOB_AREA_CD",area_cd);
+	//localStorage.setItem("JOB_DIST_NET_CD",dist_net_cd);
 	//var UTCstring = (new Date()).toUTCString();
 	//console.log(UTCstring);
-    jobSubmitData = new outstandingJobObject(localStorage.getItem("JOB_CONT_NR"),localStorage.getItem("JOB_CONT_INV_NR"),localStorage.getItem("JOB_DEL_TERR_CD"),localStorage.getItem("JOB_DIST_NR"),(new Date()).toUTCString());
+    jobSubmitData = new outstandingJobObject(localStorage.getItem("JOB_CONT_NR"),localStorage.getItem("JOB_CONT_INV_NR"),localStorage.getItem("JOB_DEL_TERR_CD"),localStorage.getItem("JOB_DIST_NR"),(new Date()).toUTCString(),localStorage.getItem("JOB_AREA_CD"),localStorage.getItem("JOB_DIST_NET_CD"));
     $.ajax({
            url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/markCompleted",
            type: "POST",
@@ -144,9 +152,9 @@ function markJobAsComplete()
            closePopUp();
            storeFailedJobsSubmit();
            /*if(navigator.notification) {
-			   navigator.notification.alert("Network Connection Error "+errorThrown, null, 'Outstanding Jobs', 'Ok');
+            navigator.notification.alert("Network Connection Error "+errorThrown, null, 'Outstanding Jobs', 'Ok');
             }else{
-			   alert("Network Connection Error "+errorThrown);
+            alert("Network Connection Error "+errorThrown);
             }*/
            }
            });
@@ -162,22 +170,22 @@ function storeFailedJobsSubmit()
 }
 
 function createJobSubmitTable(tx) {
-	tx.executeSql('CREATE TABLE IF NOT EXISTS JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime)');
+	tx.executeSql('CREATE TABLE IF NOT EXISTS JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime,area_cd,dist_net_cd)');
 }
 
 function createJobSubmitTableComplete() {
     localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
     localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-	  tx.executeSql("INSERT INTO JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime) VALUES (?, ?, ?, ?, ?)",
-					[jobSubmitData.cont_nr, jobSubmitData.cont_inv_nr, jobSubmitData.del_terr_cd, jobSubmitData.dist_nr, jobSubmitData.utcTime],function(){},function(err){
-					console.log("Error processing SQL: "+err.code+' '+err.message);});
-	  }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function successCB() {
-	  console.log("Saved job1 for submission");
-	  localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	  localDatabaseInstance.transaction(function removeJob(tx) {
-		sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
-		tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
-	  });
+      tx.executeSql("INSERT INTO JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime,area_cd,dist_net_cd) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [jobSubmitData.cont_nr, jobSubmitData.cont_inv_nr, jobSubmitData.del_terr_cd, jobSubmitData.dist_nr, jobSubmitData.utcTime, jobSubmitData.area_cd, jobSubmitData.dist_net_cd],function(){},function(err){
+                    console.log("Error processing SQL: "+err.code+' '+err.message);});
+      }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function successCB() {
+      console.log("Saved job1 for submission");
+      localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+      localDatabaseInstance.transaction(function removeJob(tx) {
+                                        sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
+                                        tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
+      });
 }
 
 /********  Outstanding jobs save to database ************/
@@ -185,19 +193,16 @@ function createJobSubmitTableComplete() {
 /********  Outstanding jobs Submission from database ************/
 
 function prepareSavedJobsSubmit()
-{
-	if(navigator.connection) {
-		var networkState = navigator.connection.type;
-		if(networkState != Connection.NONE) {
-			localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-			localDatabaseInstance.transaction(function querySavedJobs(tx) {
-				tx.executeSql('SELECT * FROM JOBSUBMIT', [], submitSavedJobs, function(err){
-					console.log("No Outstanding jobs found in database");
-					//clearInterval(submitJobsCron);
-				});
-			});
-		}
-	}
+{	
+    localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+    localDatabaseInstance.transaction(function querySavedJobs(tx) {
+      tx.executeSql('SELECT * FROM JOBSUBMIT', [], submitSavedJobs, function(err){
+        console.log("No Outstanding jobs found in database");
+        //clearInterval(submitJobsCron);
+        // table does not exists for jobs
+        prepareSavedDeliveryChecksSubmit();
+        });
+      });
 }
 
 function submitSavedJobs(tx, results) {
@@ -206,13 +211,16 @@ function submitSavedJobs(tx, results) {
 	if(len > 0) {
 		submittedJobs = [];
 	    startSubmittingJobs(results,0);
+	}else if( len == 0){
+		// table exists but no records found
+		prepareSavedDeliveryChecksSubmit();
 	}
 }
 
 function startSubmittingJobs(results,counter)
 {
 	if(counter < results.rows.length){
-		jobSubmitData = new outstandingJobObject(results.rows.item(counter).cont_nr, results.rows.item(counter).cont_inv_nr, results.rows.item(counter).del_terr_cd, results.rows.item(counter).dist_nr,results.rows.item(counter).utcTime);
+		jobSubmitData = new outstandingJobObject(results.rows.item(counter).cont_nr, results.rows.item(counter).cont_inv_nr, results.rows.item(counter).del_terr_cd, results.rows.item(counter).dist_nr,results.rows.item(counter).utcTime,results.rows.item(counter).area_cd,results.rows.item(counter).dist_net_cd);
 		//console.log(tempObj);
 		$.ajax({
                url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/markCompleted",
@@ -221,12 +229,12 @@ function startSubmittingJobs(results,counter)
                data: jobSubmitData,
                success:function(data, textStatus, jqXHR)
                {
-               submittedJobs.push(results.rows.item(counter).cont_nr);
+               submittedJobs.push(jobSubmitData);
                setTimeout(function(){startSubmittingJobs(results,(counter+1))});
                },
                error: function(jqXHR, textStatus, errorThrown)
                {
-               submittedJobs.push(results.rows.item(counter).cont_nr);
+               submittedJobs.push(jobSubmitData);
                setTimeout(function(){startSubmittingJobs(results,(counter+1))});
                }
                });
@@ -237,60 +245,69 @@ function startSubmittingJobs(results,counter)
 
 function removeSubmitedJobs()
 {
-	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);	
-	localDatabaseInstance.transaction(queryRemoveSubmittedJobs, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function(){});
-}
-
-function queryRemoveSubmittedJobs(tx) {
-    var joinedItems = "";
+	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+	console.log('Number of submitted jobs '+submittedJobs.length);
 	for(i = 0;i < submittedJobs.length ; i++)
 	{
-		if(i == submittedJobs.length-1) {
-			joinedItems += "'"+submittedJobs[i]+"'";
-		}else{
-			joinedItems += "'"+submittedJobs[i]+"',";
-		}
-		
+		localDatabaseInstance.transaction(queryRemoveSubmittedJobs(submittedJobs[i],i), function(err){console.log("Error processing SQL: "+err.code+' '+err.message)},function(){ console.log('removed job'); });
 	}
-	console.log(joinedItems);
-    sql = "DELETE FROM JOBSUBMIT WHERE cont_nr IN ("+joinedItems+")";
-	console.log(sql);
-	tx.executeSql(sql);     
+    
 }
+
+function queryRemoveSubmittedJobs(job,counter) {
+    return function(tx) {
+    	tx.executeSql('DELETE FROM JOBSUBMIT WHERE cont_nr = ? AND cont_inv_nr = ? AND del_terr_cd = ?',[job.cont_nr,job.cont_inv_nr,job.del_terr_cd],function(){console.log('success')},function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});
+    	
+        //console.log('DELETE FROM JOBSUBMIT WHERE cont_nr = '+job.cont_nr+' AND cont_inv_nr = '+job.cont_inv_nr+' AND del_terr_cd = '+job.del_terr_cd);
+        tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_nr ,dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
+        tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
+                      [job.cont_nr, job.cont_inv_nr, job.del_terr_cd, job.dist_nr, job.dist_net_cd, job.area_cd, (new Date()).toUTCString(), (new Date()).toUTCString(), job.batch, '', ''],function(){},function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});
+        //console.log("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES ("+job.cont_nr+","+job.cont_inv_nr+","+job.del_terr_cd+","+job.dist_nr+","+(new Date()).toUTCString()+","+(new Date()).toUTCString()+","+job.batch+")");
+        if(counter == submittedJobs.length-1) {
+        	submittedJobs = [];
+        	prepareSavedDeliveryChecksSubmit();
+        }
+    };
+}
+
 
 /********  Outstanding jobs Submission from database ************/
 
 // device APIs are available
-//
+
 function onDeviceReady() {
-	//document.addEventListener("backbutton", delivery_check_back, false);	
+		
 	navigator.splashscreen.hide();
-	//alert('onDeviceReady');
-	/*navigator.geolocation.getCurrentPosition(function(position){alert('Latitude: '+ position.coords.latitude+'Longitude: '+ position.coords.longitude);}, function(error){ alert('code: '    + error.code    + '\n' +
-          'message: ' + error.message + '\n');
-});*/
-    showLoader();
+    
 	localStorage.setItem("location_error","location timeout");
 	
 	var options = { timeout: 60000 , maximumAge: 3000 , enableHighAccuracy: true};
-    //watchID = navigator.geolocation.watchPosition(onGeolocationSuccess, onGeolocationError, options);
+    
 	navigator.geolocation.getCurrentPosition(onGeolocationSuccess, onGeolocationError, options);
 
 	//navigator.notification.alert("Unique identifier "+device.uuid, null, 'PMP', 'Ok');
-	 localStorage.setItem("unique_identifier",device.uuid);
+    localStorage.setItem("unique_identifier",device.uuid);
 	 
-	 if(localDatabaseInstance == false) {
+    startBackgroundCron();
+}
+
+function startBackgroundCron()
+{
+	if(localDatabaseInstance == false) {
 		localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	 }
-    
-    if(checkDataCron == false) {
-        // Cron is not running.Restart the cron
-		checkDataCron = setInterval(checkNewDataFromServer,5000);		
     }
-	submitDeliveryChecksCron = setInterval(prepareSavedDeliveryChecksSubmit,5000);
-	submitQueriesCron = setInterval(prepareSavedQueriesSubmit,5000);
-	submitJobsCron = setInterval(prepareSavedJobsSubmit,5000);
+    //localDatabaseInstance.transaction(dropTables, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function(){console.log('success');});
     
+	if(localStorage.getItem("dist_nr") != null)
+	{
+        if(checkDataCron == false) {
+	        // Cron is not running.Restart the cron
+			checkDataCron = setInterval(checkNewDataFromServer,5000);
+	    }
+		//submitDeliveryChecksCron = setInterval(prepareSavedDeliveryChecksSubmit,5000);
+		submitQueriesCron = setInterval(prepareSavedQueriesSubmit,5000);
+		submitJobsCron = setInterval(prepareSavedJobsSubmit,5000);
+	}
 }
 
 function checkNewDataFromServer()
@@ -728,6 +745,7 @@ function login()
 					localStorage.setItem("distName",data.dist_nm);
                     localStorage.setItem("play_audit_sound","yes");
                     localStorage.setItem("play_query_sound","yes");
+                    startBackgroundCron();
 					//console.log('Distributor number is '+localStorage.getItem("dist_nr"));
 					setTimeout(function(){
 						//goTo('menu');
@@ -1512,9 +1530,11 @@ function getOutstandingJobs()
 					}else if(outstandingJobs.area_cd == localStorage.getItem("outstandingjob_filter")) {
 						html += tempHTML;											
 					}
+                       //if(i == 0) console.log(html);
 				});
 				$("#outstanding_jobs_content").html( html );
 				hideLoader();
+           
 				
 				/*** Keep a copy in local Database ***/
 				

@@ -548,7 +548,7 @@
 				INFOPLIST_FILE = "PMP/PMP-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				PRODUCT_NAME = PMP;
-				PROVISIONING_PROFILE = "AA1DB6BC-D9ED-48B7-90DB-03338FDFEA14";
+				PROVISIONING_PROFILE = "6D8731D6-2342-4A49-8C3D-FD8B1C142C1B";
 				SDKROOT = iphoneos6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -571,11 +571,73 @@
 				INFOPLIST_FILE = "PMP/PMP-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				PRODUCT_NAME = PMP;
-				PROVISIONING_PROFILE = "AA1DB6BC-D9ED-48B7-90DB-03338FDFEA14";
+				PROVISIONING_PROFILE = "6D8731D6-2342-4A49-8C3D-FD8B1C142C1B";
 				SDKROOT = iphoneos6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
+		};
+		9E52012A18C9007A0076B06B /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "iPhone Distribution: Mobilise IT Pty Ltd.";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Mobilise IT Pty Ltd.";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_THUMB_SUPPORT = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"\"$(TARGET_BUILD_DIR)/usr/local/lib/include\"",
+					"\"$(OBJROOT)/UninstalledProducts/include\"",
+					"\"$(BUILT_PRODUCTS_DIR)\"",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					CoreFoundation,
+					"-weak_framework",
+					UIKit,
+					"-weak_framework",
+					AVFoundation,
+					"-weak_framework",
+					CoreMedia,
+					"-weak-lSystem",
+					"-all_load",
+					"-Obj-C",
+				);
+				PROVISIONING_PROFILE = "AA1DB6BC-D9ED-48B7-90DB-03338FDFEA14";
+				SDKROOT = iphoneos6.0;
+				SKIP_INSTALL = NO;
+				USER_HEADER_SEARCH_PATHS = "";
+			};
+			name = Distribution;
+		};
+		9E52012B18C9007A0076B06B /* Distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				CODE_SIGN_IDENTITY = "iPhone Distribution: Mobilise IT Pty Ltd.";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: Mobilise IT Pty Ltd.";
+				COMPRESS_PNG_FILES = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "PMP/PMP-Prefix.pch";
+				GCC_THUMB_SUPPORT = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				INFOPLIST_FILE = "PMP/PMP-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				PRODUCT_NAME = PMP;
+				PROVISIONING_PROFILE = "6D8731D6-2342-4A49-8C3D-FD8B1C142C1B";
+				SDKROOT = iphoneos6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Distribution;
 		};
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -658,6 +720,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1D6058940D05DD3E006BFB54 /* Debug */,
+				9E52012B18C9007A0076B06B /* Distribution */,
 				1D6058950D05DD3E006BFB54 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -667,6 +730,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
+				9E52012A18C9007A0076B06B /* Distribution */,
 				C01FCF5008A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
