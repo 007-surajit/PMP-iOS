@@ -20,6 +20,9 @@ var submitDeliveryChecksCron = false;
 var submitQueriesCron = false;
 var submitJobsCron = false;
 var jobSubmitData = "";
+var unSubmittedJobs = [];
+var demo_service_url = "https://support.mobiliseit.com/PMP/PDAservice.asmx/";
+var live_service_url = "http://pmp.mobiliseit.com/PMPWS/Pdaservice.asmx/";
 
 function goTo(page)
 {
@@ -33,7 +36,7 @@ function back()
 	history.back();
 }
 
-function goBack(page) 
+function goBack(page)
 {
 	$.mobile.changePage( page+".html", { transition: "slide" , reverse: true} );
 }
@@ -54,28 +57,28 @@ function popUp(dt,cw,cont_nr,dist_nr,area_cd,dist_net_cd)
     
     var d1 = document.getElementById('Outstandingjob');
     
-	var d2 = document.getElementById('confirmation');	
+	var d2 = document.getElementById('confirmation');
 	
-	if(document.getElementById('overlayOutstanding') == null) {		
+	if(document.getElementById('overlayOutstanding') == null) {
 		d1.insertAdjacentHTML('afterend', '<div id="overlayOutstanding">'+d2.innerHTML+'</div>');
 	}else{
 		document.getElementById('overlayOutstanding').style.display='block';
 	}
 	//alert('dg');
-	$(".alert_confirmation").css("margin-top","0px");	
+	$(".alert_confirmation").css("margin-top","0px");
 	$("#overlayOutstanding").css("padding-top",window.innerHeight/4);
 }
 
 function showLoader(msg)
 {
 	/*var d1 = document.getElementsByTagName('body')[0];
-    var d2 = document.getElementById('loader');	
-	if(document.getElementById('loaderOverlay') == null) {
-		d1.insertAdjacentHTML('afterend', '<div id="loaderOverlay">'+d2.innerHTML+'</div>');
-	}else{
-		document.getElementById('loaderOverlay').style.display='block';
-	}
-	$("#loaderOverlay #custom").css("marginTop",window.innerHeight/3);*/
+     var d2 = document.getElementById('loader');
+     if(document.getElementById('loaderOverlay') == null) {
+     d1.insertAdjacentHTML('afterend', '<div id="loaderOverlay">'+d2.innerHTML+'</div>');
+     }else{
+     document.getElementById('loaderOverlay').style.display='block';
+     }
+     $("#loaderOverlay #custom").css("marginTop",window.innerHeight/3);*/
     var options =  { backgroundOpacity: 0.7}
     navigator.notificationEx.loadingStart(options);
 }
@@ -91,15 +94,15 @@ function popUpDelivery()
 	//var overlay = jQuery('<div id="overlay"> </div>');
 	//overlay.appendTo(document.body);
 	var d1 = document.getElementById('delivery_audit');
-    var d2 = document.getElementById('audit_popup');    
-     	
+    var d2 = document.getElementById('audit_popup');
+    
 	//d1.insertAdjacentHTML('afterend', '<div id="overlay"> </div>');
 	if(document.getElementById('overlay') == null) {
 		d1.insertAdjacentHTML('afterend', '<div id="overlay">'+d2.innerHTML+'</div>');
 	}else{
 		document.getElementById('overlay').style.display='block';
 	}
-	$(".alert_confirmation").css("margin-top","0px");	
+	$(".alert_confirmation").css("margin-top","0px");
 	$("#overlay").css("padding-top",window.innerHeight/14);
 }
 
@@ -137,7 +140,7 @@ function markJobAsComplete()
 	//console.log(UTCstring);
     jobSubmitData = new outstandingJobObject(localStorage.getItem("JOB_CONT_NR"),localStorage.getItem("JOB_CONT_INV_NR"),localStorage.getItem("JOB_DEL_TERR_CD"),localStorage.getItem("JOB_DIST_NR"),(new Date()).toUTCString(),localStorage.getItem("JOB_AREA_CD"),localStorage.getItem("JOB_DIST_NET_CD"));
     $.ajax({
-           url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/markCompleted",
+           url: demo_service_url+"markCompleted",
            type: "POST",
            timeout: 60000 ,
            data: jobSubmitData,
@@ -176,16 +179,16 @@ function createJobSubmitTable(tx) {
 function createJobSubmitTableComplete() {
     localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
     localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-      tx.executeSql("INSERT INTO JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime,area_cd,dist_net_cd) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    [jobSubmitData.cont_nr, jobSubmitData.cont_inv_nr, jobSubmitData.del_terr_cd, jobSubmitData.dist_nr, jobSubmitData.utcTime, jobSubmitData.area_cd, jobSubmitData.dist_net_cd],function(){},function(err){
-                    console.log("Error processing SQL: "+err.code+' '+err.message);});
-      }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function successCB() {
-      console.log("Saved job1 for submission");
-      localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-      localDatabaseInstance.transaction(function removeJob(tx) {
-                                        sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
-                                        tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
-      });
+                                      tx.executeSql("INSERT INTO JOBSUBMIT(cont_nr,cont_inv_nr,del_terr_cd,dist_nr,utcTime,area_cd,dist_net_cd) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                                    [jobSubmitData.cont_nr, jobSubmitData.cont_inv_nr, jobSubmitData.del_terr_cd, jobSubmitData.dist_nr, jobSubmitData.utcTime, jobSubmitData.area_cd, jobSubmitData.dist_net_cd],function(){},function(err){
+                                                    console.log("Error processing SQL: "+err.code+' '+err.message);});
+                                      }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function successCB() {
+                                      console.log("Saved job1 for submission");
+                                      localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+                                      localDatabaseInstance.transaction(function removeJob(tx) {
+                                                                        sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
+                                                                        tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
+                                      });
 }
 
 /********  Outstanding jobs save to database ************/
@@ -193,16 +196,16 @@ function createJobSubmitTableComplete() {
 /********  Outstanding jobs Submission from database ************/
 
 function prepareSavedJobsSubmit()
-{	
+{
     localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
     localDatabaseInstance.transaction(function querySavedJobs(tx) {
-      tx.executeSql('SELECT * FROM JOBSUBMIT', [], submitSavedJobs, function(err){
-        console.log("No Outstanding jobs found in database");
-        //clearInterval(submitJobsCron);
-        // table does not exists for jobs
-        prepareSavedDeliveryChecksSubmit();
-        });
-      });
+                                      tx.executeSql('SELECT * FROM JOBSUBMIT', [], submitSavedJobs, function(err){
+                                                    console.log("No Outstanding jobs found in database");
+                                                    //clearInterval(submitJobsCron);
+                                                    // table does not exists for jobs
+                                                    prepareSavedDeliveryChecksSubmit();
+                                                    });
+                                      });
 }
 
 function submitSavedJobs(tx, results) {
@@ -210,6 +213,7 @@ function submitSavedJobs(tx, results) {
     console.log("JOBSUBMIT table: " + len + " rows found.");
 	if(len > 0) {
 		submittedJobs = [];
+        unSubmittedJobs = [];
 	    startSubmittingJobs(results,0);
 	}else if( len == 0){
 		// table exists but no records found
@@ -223,7 +227,7 @@ function startSubmittingJobs(results,counter)
 		jobSubmitData = new outstandingJobObject(results.rows.item(counter).cont_nr, results.rows.item(counter).cont_inv_nr, results.rows.item(counter).del_terr_cd, results.rows.item(counter).dist_nr,results.rows.item(counter).utcTime,results.rows.item(counter).area_cd,results.rows.item(counter).dist_net_cd);
 		//console.log(tempObj);
 		$.ajax({
-               url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/markCompleted",
+               url: demo_service_url+"markCompleted",
                type: "POST",
                timeout: 60000 ,
                data: jobSubmitData,
@@ -234,7 +238,7 @@ function startSubmittingJobs(results,counter)
                },
                error: function(jqXHR, textStatus, errorThrown)
                {
-               submittedJobs.push(jobSubmitData);
+               unSubmittedJobs.push(jobSubmitData);
                setTimeout(function(){startSubmittingJobs(results,(counter+1))});
                }
                });
@@ -247,10 +251,15 @@ function removeSubmitedJobs()
 {
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	console.log('Number of submitted jobs '+submittedJobs.length);
+    console.log('Number of unSubmitted jobs '+unSubmittedJobs.length);
 	for(i = 0;i < submittedJobs.length ; i++)
 	{
 		localDatabaseInstance.transaction(queryRemoveSubmittedJobs(submittedJobs[i],i), function(err){console.log("Error processing SQL: "+err.code+' '+err.message)},function(){ console.log('removed job'); });
 	}
+    for(i = 0;i < unSubmittedJobs.length ; i++)
+    {
+        localDatabaseInstance.transaction(queryRemoveUnsubmittedJobs(unSubmittedJobs[i],i), function(err){console.log("Error processing SQL: "+err.code+' '+err.message)},function(){ console.log('moved to delivery audit'); });
+    }
     
 }
 
@@ -270,13 +279,27 @@ function queryRemoveSubmittedJobs(job,counter) {
     };
 }
 
+function queryRemoveUnsubmittedJobs(job,counter) {
+    return function(tx) {
+    	
+        tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_nr ,dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
+        tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
+                      [job.cont_nr, job.cont_inv_nr, job.del_terr_cd, job.dist_nr, job.dist_net_cd, job.area_cd, (new Date()).toUTCString(), (new Date()).toUTCString(), job.batch, '', ''],function(){},function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});
+        
+        if(counter == unSubmittedJobs.length-1) {
+        	unSubmittedJobs = [];
+        	prepareSavedDeliveryChecksSubmit();
+        }
+    };
+}
+
 
 /********  Outstanding jobs Submission from database ************/
 
 // device APIs are available
 
 function onDeviceReady() {
-		
+    
 	navigator.splashscreen.hide();
     
 	localStorage.setItem("location_error","location timeout");
@@ -284,10 +307,10 @@ function onDeviceReady() {
 	var options = { timeout: 60000 , maximumAge: 3000 , enableHighAccuracy: true};
     
 	navigator.geolocation.getCurrentPosition(onGeolocationSuccess, onGeolocationError, options);
-
+    
 	//navigator.notification.alert("Unique identifier "+device.uuid, null, 'PMP', 'Ok');
     localStorage.setItem("unique_identifier",device.uuid);
-	 
+    
     startBackgroundCron();
 }
 
@@ -315,112 +338,112 @@ function checkNewDataFromServer()
 	if(localStorage.getItem("dist_nr") != null && checkNewDataRequestInProgress == false) {
 	    checkNewDataRequestInProgress = true;
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetAnchor?dist_nr="+localStorage.getItem("dist_nr"),
-		  timeout: 60000 ,
-		  dataType: 'json',	  
-		  success:function(data, textStatus, jqXHR)
-		  {		
-			checkNewDataRequestInProgress = false;
-			console.log(JSON.stringify(data));
-			if(localStorage.getItem("LastFromIvrTime") == null) {
-				if(auditListRequestInProgress == false) {
-					localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
-					downloadAuditList();
-					/*if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {
-						if(navigator.notification) {
-							navigator.notification.beep();
-						}
-					}*/
-				}
-			}else {
-				if(localStorage.getItem("LastFromIvrTime") != data.LastFromIvrTime) {
-					// download audit list from server
-					if(auditListRequestInProgress == false) {
-						localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
-						downloadAuditList();
-						if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {	
-							if(navigator.notification) {
-								navigator.notification.beep();
-							}
-						}
-					}
-				}
-			}
-			if(localStorage.getItem("MaxToIvrBatch") == null) {
-				if(outstandingListRequestInProgress == false) {
-					localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
-					downloadOutstandingList();
-				}
-			}else{
-				if(localStorage.getItem("MaxToIvrBatch") != data.MaxToIvrBatch) {
-					// download outstanding job list from server
-					if(outstandingListRequestInProgress == false) {
-						localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
-						downloadOutstandingList();
-					}
-				}
-			}
-			if(localStorage.getItem("MaxQueryToPdarBatch") == null) {
-				if(queryListRequestInProgress == false) {
-					localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
-					downloadQueryList();
-					/*if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
-						if(navigator.notification) {
-								navigator.notification.beep();
-						}
-					}*/
-				}
-     		}else{
-				if(localStorage.getItem("MaxQueryToPdarBatch") != data.MaxQueryToPdarBatch) {
-					// download query list from server
-					if(queryListRequestInProgress == false) {
-						localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
-						downloadQueryList();
-						if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
-							if(navigator.notification) {
-								navigator.notification.beep();
-							}
-						}
-					}
-				}
-            }
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {
-			checkNewDataRequestInProgress = false;
-		  }	  
-		});
+               url: demo_service_url+"GetAnchor?dist_nr="+localStorage.getItem("dist_nr"),
+               timeout: 60000 ,
+               dataType: 'json',
+               success:function(data, textStatus, jqXHR)
+               {
+               checkNewDataRequestInProgress = false;
+               console.log(JSON.stringify(data));
+               if(localStorage.getItem("LastFromIvrTime") == null) {
+               if(auditListRequestInProgress == false) {
+               localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
+               downloadAuditList();
+               /*if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {
+                if(navigator.notification) {
+                navigator.notification.beep();
+                }
+                }*/
+               }
+               }else {
+               if(localStorage.getItem("LastFromIvrTime") != data.LastFromIvrTime) {
+               // download audit list from server
+               if(auditListRequestInProgress == false) {
+               localStorage.setItem("LastFromIvrTime",data.LastFromIvrTime);
+               downloadAuditList();
+               if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {
+               if(navigator.notification) {
+               navigator.notification.beep();
+               }
+               }
+               }
+               }
+               }
+               if(localStorage.getItem("MaxToIvrBatch") == null) {
+               if(outstandingListRequestInProgress == false) {
+               localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
+               downloadOutstandingList();
+               }
+               }else{
+               if(localStorage.getItem("MaxToIvrBatch") != data.MaxToIvrBatch) {
+               // download outstanding job list from server
+               if(outstandingListRequestInProgress == false) {
+               localStorage.setItem("MaxToIvrBatch",data.MaxToIvrBatch);
+               downloadOutstandingList();
+               }
+               }
+               }
+               if(localStorage.getItem("MaxQueryToPdarBatch") == null) {
+               if(queryListRequestInProgress == false) {
+               localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
+               downloadQueryList();
+               /*if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
+                if(navigator.notification) {
+                navigator.notification.beep();
+                }
+                }*/
+               }
+               }else{
+               if(localStorage.getItem("MaxQueryToPdarBatch") != data.MaxQueryToPdarBatch) {
+               // download query list from server
+               if(queryListRequestInProgress == false) {
+               localStorage.setItem("MaxQueryToPdarBatch",data.MaxQueryToPdarBatch);
+               downloadQueryList();
+               if(localStorage.getItem("play_query_sound")!= null && localStorage.getItem("play_query_sound") == "yes") {
+               if(navigator.notification) {
+               navigator.notification.beep();
+               }
+               }
+               }
+               }
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               {
+               checkNewDataRequestInProgress = false;
+               }
+               });
 	}
 }
 
 /*******  Query List save to Database  ******/
 
 function downloadQueryList() {
-
+    
 	queryListRequestInProgress = true;
 	if(localStorage.getItem("dist_nr") != null) {
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetQueryToPdaByManager?dist_nr="+localStorage.getItem("dist_nr"),
-		  timeout: 60000 ,
-		  dataType: 'json',
-		  success:function(data, textStatus, jqXHR)
-		  {
-			queryListRequestInProgress = false;
-			serviceResponseForQuery = data.queries_to_pda;
-			if(savingQueryListDataToDb == false) {
-				savingQueryListDataToDb = true;			
-				localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-				localDatabaseInstance.transaction(dropQueryTable, function(){savingQueryListDataToDb = false}, dropQueryTableComplete);
-			}
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  { queryListRequestInProgress = false;}
-        });		  
+               url: demo_service_url+"GetQueryToPdaByManager?dist_nr="+localStorage.getItem("dist_nr"),
+               timeout: 60000 ,
+               dataType: 'json',
+               success:function(data, textStatus, jqXHR)
+               {
+               queryListRequestInProgress = false;
+               serviceResponseForQuery = data.queries_to_pda;
+               if(savingQueryListDataToDb == false) {
+               savingQueryListDataToDb = true;
+               localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+               localDatabaseInstance.transaction(dropQueryTable, function(){savingQueryListDataToDb = false}, dropQueryTableComplete);
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               { queryListRequestInProgress = false;}
+               });
 	}
 }
 
 function dropQueryTable(tx) {
-     tx.executeSql('DROP TABLE IF EXISTS QUERIES');     
+    tx.executeSql('DROP TABLE IF EXISTS QUERIES');
 }
 
 function dropQueryTableComplete() {
@@ -429,7 +452,7 @@ function dropQueryTableComplete() {
 }
 
 function createQueryTable(tx) {
-     tx.executeSql('CREATE TABLE IF NOT EXISTS QUERIES (query_nr, dist_nr, dist_net_cd, query_job_nr, query_job_desc, query_job_dtime, query_reported_dtime, query_area_details, query_type_desc, query_detail, str_nr, str_nm, str_type_cd, sub_nm, pc_cd, batch )');     
+    tx.executeSql('CREATE TABLE IF NOT EXISTS QUERIES (query_nr, dist_nr, dist_net_cd, query_job_nr, query_job_desc, query_job_dtime, query_reported_dtime, query_area_details, query_type_desc, query_detail, str_nr, str_nm, str_type_cd, sub_nm, pc_cd, batch )');
 }
 
 function createQueryTableComplete() {
@@ -464,50 +487,50 @@ function saveQueryListDataToDb(serviceResponseForQuery,i)
     if (i < serviceResponseForQuery.length) {
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-            tx.executeSql("INSERT INTO QUERIES ( query_nr, dist_nr, dist_net_cd, query_job_nr, query_job_desc, query_job_dtime, query_reported_dtime, query_area_details, query_type_desc, query_detail, str_nr, str_nm, str_type_cd, sub_nm, pc_cd, batch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [serviceResponseForQuery[i].query_nr, serviceResponseForQuery[i].dist_nr, serviceResponseForQuery[i].dist_net_cd, serviceResponseForQuery[i].query_job_nr, serviceResponseForQuery[i].query_job_desc, serviceResponseForQuery[i].query_job_dtime, serviceResponseForQuery[i].query_reported_dtime, serviceResponseForQuery[i].query_area_details, serviceResponseForQuery[i].query_type_desc, serviceResponseForQuery[i].query_detail, serviceResponseForQuery[i].str_nr, serviceResponseForQuery[i].str_nm, serviceResponseForQuery[i].str_type_cd, serviceResponseForQuery[i].sub_nm, serviceResponseForQuery[i].pc_cd, serviceResponseForQuery[i].batch],function(){},function(){savingQueryListDataToDb = false});
-        }, function(){savingQueryListDataToDb = false}, function successCB() {
-            /* Recursive Function For Inserting the State in Local Db */
-            saveQueryListDataToDb(serviceResponseForQuery, (i + 1));
-        });
+                                          tx.executeSql("INSERT INTO QUERIES ( query_nr, dist_nr, dist_net_cd, query_job_nr, query_job_desc, query_job_dtime, query_reported_dtime, query_area_details, query_type_desc, query_detail, str_nr, str_nm, str_type_cd, sub_nm, pc_cd, batch) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                                        [serviceResponseForQuery[i].query_nr, serviceResponseForQuery[i].dist_nr, serviceResponseForQuery[i].dist_net_cd, serviceResponseForQuery[i].query_job_nr, serviceResponseForQuery[i].query_job_desc, serviceResponseForQuery[i].query_job_dtime, serviceResponseForQuery[i].query_reported_dtime, serviceResponseForQuery[i].query_area_details, serviceResponseForQuery[i].query_type_desc, serviceResponseForQuery[i].query_detail, serviceResponseForQuery[i].str_nr, serviceResponseForQuery[i].str_nm, serviceResponseForQuery[i].str_type_cd, serviceResponseForQuery[i].sub_nm, serviceResponseForQuery[i].pc_cd, serviceResponseForQuery[i].batch],function(){},function(){savingQueryListDataToDb = false});
+                                          }, function(){savingQueryListDataToDb = false}, function successCB() {
+                                          /* Recursive Function For Inserting the State in Local Db */
+                                          saveQueryListDataToDb(serviceResponseForQuery, (i + 1));
+                                          });
     }
     else {
 		savingQueryListDataToDb = false;
         serviceResponseForQuery = "";
-        console.log('Query List Inserted Successfully');		
+        console.log('Query List Inserted Successfully');
     }
-} 
+}
 
 /*******  Query List save to Database  ******/
 
 /******  Outstanding Jobs List ****************/
 
 function downloadOutstandingList()
-{	
+{
 	outstandingListRequestInProgress = true;
 	if(localStorage.getItem("dist_nr") != null) {
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetToIvrByManager?dist_nr="+localStorage.getItem("dist_nr"),
-		  timeout: 60000 ,
-		  dataType: 'json',
-		  success:function(data, textStatus, jqXHR)
-		  {
-			outstandingListRequestInProgress = false;
-			serviceResponseForOutstandingJobs = data.to_ivr;
-			if(savingOutstandingListDataToDb == false) {
-				savingOutstandingListDataToDb = true;			
-				localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-				localDatabaseInstance.transaction(dropOutstandingJobsTable, function(){savingOutstandingListDataToDb = false}, dropOutstandingJobsTableComplete);
-			}
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  { outstandingListRequestInProgress = false; }
-        });		  
+               url: demo_service_url+"GetToIvrByManager?dist_nr="+localStorage.getItem("dist_nr"),
+               timeout: 60000 ,
+               dataType: 'json',
+               success:function(data, textStatus, jqXHR)
+               {
+               outstandingListRequestInProgress = false;
+               serviceResponseForOutstandingJobs = data.to_ivr;
+               if(savingOutstandingListDataToDb == false) {
+               savingOutstandingListDataToDb = true;
+               localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+               localDatabaseInstance.transaction(dropOutstandingJobsTable, function(){savingOutstandingListDataToDb = false}, dropOutstandingJobsTableComplete);
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               { outstandingListRequestInProgress = false; }
+               });
 	}
 }
 
 function dropOutstandingJobsTable(tx) {
-     tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');     
+    tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
 }
 
 function dropOutstandingJobsTableComplete() {
@@ -516,7 +539,7 @@ function dropOutstandingJobsTableComplete() {
 }
 
 function createOutstandingJobsTable(tx) {
-     tx.executeSql('CREATE TABLE IF NOT EXISTS OUTSTANDINGJOBS (cont_nr, del_terr_cd, cont_inv_nr, dist_nr, first_nm, last_nm, old_cont_inv_nr, start_dtime, end_dtime, dist_net_cd, batch, area_cd )');     
+    tx.executeSql('CREATE TABLE IF NOT EXISTS OUTSTANDINGJOBS (cont_nr, del_terr_cd, cont_inv_nr, dist_nr, first_nm, last_nm, old_cont_inv_nr, start_dtime, end_dtime, dist_net_cd, batch, area_cd )');
 }
 
 function createOutstandingJobsTableComplete() {
@@ -530,17 +553,17 @@ function saveOutstandingJobsListDataToDb(serviceResponseForOutstandingJobs,j)
     if (j < serviceResponseForOutstandingJobs.length) {
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-            tx.executeSql("INSERT INTO OUTSTANDINGJOBS ( cont_nr, del_terr_cd, cont_inv_nr, dist_nr, first_nm, last_nm, old_cont_inv_nr, start_dtime, end_dtime, dist_net_cd, batch, area_cd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              [serviceResponseForOutstandingJobs[j].cont_nr, serviceResponseForOutstandingJobs[j].del_terr_cd, serviceResponseForOutstandingJobs[j].cont_inv_nr, serviceResponseForOutstandingJobs[j].dist_nr, serviceResponseForOutstandingJobs[j].first_nm, serviceResponseForOutstandingJobs[j].last_nm, serviceResponseForOutstandingJobs[j].old_cont_inv_nr, serviceResponseForOutstandingJobs[j].start_dtime, serviceResponseForOutstandingJobs[j].end_dtime, serviceResponseForOutstandingJobs[j].dist_net_cd, serviceResponseForOutstandingJobs[j].batch, serviceResponseForOutstandingJobs[j].area_cd],function(){},function(){savingOutstandingListDataToDb = false});
-        }, function(){savingOutstandingListDataToDb = false}, function successCB() {
-            /* Recursive Function For Inserting the State in Local Db */
-            saveOutstandingJobsListDataToDb(serviceResponseForOutstandingJobs, (j + 1));
-        });
+                                          tx.executeSql("INSERT INTO OUTSTANDINGJOBS ( cont_nr, del_terr_cd, cont_inv_nr, dist_nr, first_nm, last_nm, old_cont_inv_nr, start_dtime, end_dtime, dist_net_cd, batch, area_cd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                                        [serviceResponseForOutstandingJobs[j].cont_nr, serviceResponseForOutstandingJobs[j].del_terr_cd, serviceResponseForOutstandingJobs[j].cont_inv_nr, serviceResponseForOutstandingJobs[j].dist_nr, serviceResponseForOutstandingJobs[j].first_nm, serviceResponseForOutstandingJobs[j].last_nm, serviceResponseForOutstandingJobs[j].old_cont_inv_nr, serviceResponseForOutstandingJobs[j].start_dtime, serviceResponseForOutstandingJobs[j].end_dtime, serviceResponseForOutstandingJobs[j].dist_net_cd, serviceResponseForOutstandingJobs[j].batch, serviceResponseForOutstandingJobs[j].area_cd],function(){},function(){savingOutstandingListDataToDb = false});
+                                          }, function(){savingOutstandingListDataToDb = false}, function successCB() {
+                                          /* Recursive Function For Inserting the State in Local Db */
+                                          saveOutstandingJobsListDataToDb(serviceResponseForOutstandingJobs, (j + 1));
+                                          });
     }
     else {
 		savingOutstandingListDataToDb = false;
 		serviceResponseForOutstandingJobs = "";
-        console.log('Outstanding Job List Inserted Successfully');		
+        console.log('Outstanding Job List Inserted Successfully');
     }
 }
 
@@ -549,31 +572,31 @@ function saveOutstandingJobsListDataToDb(serviceResponseForOutstandingJobs,j)
 /***************  Delivery audit List     ****************/
 
 function downloadAuditList()
-{	
+{
 	auditListRequestInProgress = true;
 	if(localStorage.getItem("dist_nr") != null) {
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetFromIvrByManager?dist_nr="+localStorage.getItem("dist_nr"),
-		  timeout: 60000 ,
-		  dataType: 'json',
-		  success:function(data, textStatus, jqXHR)
-		  {
-			auditListRequestInProgress = false;
-			serviceResponseForAuditList = data.from_ivr;
-			if(savingAuditListDataToDb == false) {
-				savingAuditListDataToDb = true;			
-				localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-				localDatabaseInstance.transaction(dropAuditListTable, function(){savingAuditListDataToDb = false}, dropAuditListTableComplete);
-			}
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  { auditListRequestInProgress = false; }
-        });		  
+               url: demo_service_url+"GetFromIvrByManager?dist_nr="+localStorage.getItem("dist_nr"),
+               timeout: 60000 ,
+               dataType: 'json',
+               success:function(data, textStatus, jqXHR)
+               {
+               auditListRequestInProgress = false;
+               serviceResponseForAuditList = data.from_ivr;
+               if(savingAuditListDataToDb == false) {
+               savingAuditListDataToDb = true;
+               localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+               localDatabaseInstance.transaction(dropAuditListTable, function(){savingAuditListDataToDb = false}, dropAuditListTableComplete);
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               { auditListRequestInProgress = false; }
+               });
 	}
 }
 
 function dropAuditListTable(tx) {
-     tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');     
+    tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
 }
 
 function dropAuditListTableComplete() {
@@ -582,7 +605,7 @@ function dropAuditListTableComplete() {
 }
 
 function createAuditListTable(tx) {
-     tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_nr ,dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERY_AUDIT (cont_nr, cont_inv_nr, del_terr_cd, dist_nr ,dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate )');
 }
 
 function createAuditListTableComplete() {
@@ -596,17 +619,17 @@ function saveAuditListDataToDb(serviceResponseForAuditList,k)
     if (k < serviceResponseForAuditList.length) {
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-          tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
-                        [serviceResponseForAuditList[k].cont_nr, serviceResponseForAuditList[k].cont_inv_nr, serviceResponseForAuditList[k].del_terr_cd,serviceResponseForAuditList[k].dist_nr, serviceResponseForAuditList[k].dist_net_cd, serviceResponseForAuditList[k].area_cd, serviceResponseForAuditList[k].ivr_serv_dtime, serviceResponseForAuditList[k].ivr_user_dtime, serviceResponseForAuditList[k].batch, serviceResponseForAuditList[k].DeliveryDay, serviceResponseForAuditList[k].DeliveryDate],function(){},function(){savingAuditListDataToDb = false});
-          }, function(){savingAuditListDataToDb = false}, function successCB() {
-          /* Recursive Function For Inserting the State in Local Db */
-          saveAuditListDataToDb(serviceResponseForAuditList, (k + 1));
-        });
+                                          tx.executeSql("INSERT INTO DELIVERY_AUDIT ( cont_nr, cont_inv_nr, del_terr_cd, dist_nr, dist_net_cd, area_cd, ivr_serv_dtime, ivr_user_dtime, batch, DeliveryDay, DeliveryDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?)",
+                                                        [serviceResponseForAuditList[k].cont_nr, serviceResponseForAuditList[k].cont_inv_nr, serviceResponseForAuditList[k].del_terr_cd,serviceResponseForAuditList[k].dist_nr, serviceResponseForAuditList[k].dist_net_cd, serviceResponseForAuditList[k].area_cd, serviceResponseForAuditList[k].ivr_serv_dtime, serviceResponseForAuditList[k].ivr_user_dtime, serviceResponseForAuditList[k].batch, serviceResponseForAuditList[k].DeliveryDay, serviceResponseForAuditList[k].DeliveryDate],function(){},function(){savingAuditListDataToDb = false});
+                                          }, function(){savingAuditListDataToDb = false}, function successCB() {
+                                          /* Recursive Function For Inserting the State in Local Db */
+                                          saveAuditListDataToDb(serviceResponseForAuditList, (k + 1));
+                                          });
     }
     else {
 		savingAuditListDataToDb = false;
 		serviceResponseForAuditList = "";
-        console.log('Audit List Inserted Successfully');		
+        console.log('Audit List Inserted Successfully');
     }
 }
 
@@ -614,45 +637,45 @@ function saveAuditListDataToDb(serviceResponseForAuditList,k)
 
 function checkDeviceStatus() {
 	
-	if(navigator.connection) {		
-		// Update network icon 			
-		var networkState = navigator.connection.type;		
-		var filename = $("#network_status_icon").attr("src");	
+	if(navigator.connection) {
+		// Update network icon
+		var networkState = navigator.connection.type;
+		var filename = $("#network_status_icon").attr("src");
 		var splitArray = filename.lastIndexOf("/");
-		var newfilename = "";	 
-		if(networkState == Connection.NONE) {	 
-			newfilename = filename.substring(0,splitArray)+'/'+'no_network_status.png';			
-		}else{	 
-			newfilename = filename.substring(0,splitArray)+'/'+'network_status.png';			
+		var newfilename = "";
+		if(networkState == Connection.NONE) {
+			newfilename = filename.substring(0,splitArray)+'/'+'no_network_status.png';
+		}else{
+			newfilename = filename.substring(0,splitArray)+'/'+'network_status.png';
 		}
 		$("#network_status_icon").attr("src",newfilename);
 	}
-
-    if(navigator.geolocation) {			
+    
+    if(navigator.geolocation) {
 		
 		navigator.geolocation.getCurrentPosition(function(position){
-			filename = $("#location_status_icon").attr("src");	
-			splitArray = filename.lastIndexOf("/");
-			newfilename = filename.substring(0,splitArray)+'/'+'location_available.png';			
-			$("#location_status_icon").attr("src",newfilename);
-			/*if(!$("#check_submit_btn").hasClass("input_bg")) {
-				$("#check_submit_btn").addClass("input_bg");
-			}
-			if($("#check_submit_btn").hasClass("disable")) {
-				$("#check_submit_btn").removeClass("disable");
-			}*/
-		}, function(error){			
-			filename = $("#location_status_icon").attr("src");	
-			splitArray = filename.lastIndexOf("/");
-			newfilename = filename.substring(0,splitArray)+'/'+'location_status.png';	 
-			$("#location_status_icon").attr("src",newfilename);
-			if($("#check_submit_btn").hasClass("input_bg")) {
-				$("#check_submit_btn").removeClass("input_bg");
-			}
-			if(!$("#check_submit_btn").hasClass("disable")) {
-				$("#check_submit_btn").addClass("disable");
-			}
-		} , {  maximumAge: 3000, timeout: 60000, enableHighAccuracy: true });				
+                                                 filename = $("#location_status_icon").attr("src");
+                                                 splitArray = filename.lastIndexOf("/");
+                                                 newfilename = filename.substring(0,splitArray)+'/'+'location_available.png';
+                                                 $("#location_status_icon").attr("src",newfilename);
+                                                 /*if(!$("#check_submit_btn").hasClass("input_bg")) {
+                                                  $("#check_submit_btn").addClass("input_bg");
+                                                  }
+                                                  if($("#check_submit_btn").hasClass("disable")) {
+                                                  $("#check_submit_btn").removeClass("disable");
+                                                  }*/
+                                                 }, function(error){
+                                                 filename = $("#location_status_icon").attr("src");
+                                                 splitArray = filename.lastIndexOf("/");
+                                                 newfilename = filename.substring(0,splitArray)+'/'+'location_status.png';
+                                                 $("#location_status_icon").attr("src",newfilename);
+                                                 if($("#check_submit_btn").hasClass("input_bg")) {
+                                                 $("#check_submit_btn").removeClass("input_bg");
+                                                 }
+                                                 if(!$("#check_submit_btn").hasClass("disable")) {
+                                                 $("#check_submit_btn").addClass("disable");
+                                                 }
+                                                 } , {  maximumAge: 3000, timeout: 60000, enableHighAccuracy: true });
 	}
 }
 
@@ -660,30 +683,30 @@ function deliveryCheckRefresh() {
 	showLoader();
 	setTimeout(function(){hideLoader();},3000);
 	checkDeviceStatus();
-
+    
 }
 // onSuccess Geolocation
 //
 function onGeolocationSuccess(position) {
 	/*var element = document.getElementById('geolocation');
-	element.innerHTML = 'Latitude: '          + position.coords.latitude         + '<br />' +
-						'Longitude: '         + position.coords.longitude        + '<br />' +
-						'Altitude: '          + position.coords.altitude         + '<br />' +
-						'Accuracy: '          + position.coords.accuracy         + '<br />' +
-						'Altitude Accuracy: ' + position.coords.altitudeAccuracy + '<br />' +
-						'Heading: '           + position.coords.heading          + '<br />' +
-						'Speed: '             + position.coords.speed            + '<br />' +
-						'Timestamp: '         + position.timestamp               + '<br />';*/
+     element.innerHTML = 'Latitude: '          + position.coords.latitude         + '<br />' +
+     'Longitude: '         + position.coords.longitude        + '<br />' +
+     'Altitude: '          + position.coords.altitude         + '<br />' +
+     'Accuracy: '          + position.coords.accuracy         + '<br />' +
+     'Altitude Accuracy: ' + position.coords.altitudeAccuracy + '<br />' +
+     'Heading: '           + position.coords.heading          + '<br />' +
+     'Speed: '             + position.coords.speed            + '<br />' +
+     'Timestamp: '         + position.timestamp               + '<br />';*/
 	//navigator.notification.alert('Latitude: ' + position.coords.latitude + ' Longitude: ' + position.coords.longitude, null, 'PMP', 'Ok');
-	 //alert('Latitude: ' + position.coords.latitude + ' Longitude: ' + position.coords.longitude, null, 'PMP', 'Ok');
-	 localStorage.setItem("device_latitude",position.coords.latitude);
-	 localStorage.setItem("device_longitude",position.coords.longitude);
-     localStorage.setItem("location_error","nil");
-	 hideLoader();
-     /*if(navigator.notification) {
-			navigator.notification.alert("Location determined successfully", null, 'PMP', 'Ok');
+    //alert('Latitude: ' + position.coords.latitude + ' Longitude: ' + position.coords.longitude, null, 'PMP', 'Ok');
+    localStorage.setItem("device_latitude",position.coords.latitude);
+    localStorage.setItem("device_longitude",position.coords.longitude);
+    localStorage.setItem("location_error","nil");
+    hideLoader();
+    /*if(navigator.notification) {
+     navigator.notification.alert("Location determined successfully", null, 'PMP', 'Ok');
 	 }else{
-		alert("Network Connection Error "+errorThrown);
+     alert("Network Connection Error "+errorThrown);
 	 }*/
 }
 
@@ -691,16 +714,16 @@ function onGeolocationSuccess(position) {
 //
 function onGeolocationError(error) {
 	/*alert('code: '    + error.code    + '\n' +
-		  'message: ' + error.message + '\n');*/
+     'message: ' + error.message + '\n');*/
     //navigator.notification.alert('code: ' + error.code    + '\n' + 'message: ' + error.message, null, 'PMP', 'Ok');
 	//alert('code: ' + error.code    + '\n' + 'message: ' + error.message, null, 'PMP', 'Ok');
 	localStorage.setItem("location_error",error.message);
     hideLoader();
     /*if(navigator.notification) {
-			navigator.notification.alert("Location could not be determined due to "+error.message, null, 'PMP', 'Ok');
+     navigator.notification.alert("Location could not be determined due to "+error.message, null, 'PMP', 'Ok');
 	 }else{
-		alert("Network Connection Error "+errorThrown);
-	 }*/	
+     alert("Network Connection Error "+errorThrown);
+	 }*/
 }
 
 function login()
@@ -709,9 +732,9 @@ function login()
 	if($('input[name="username"]').val() == '') {
 		if(navigator.notification) {
 			navigator.notification.alert("Username field is blank", null, 'Login', 'Ok');
-		 }else{
+        }else{
 			alert("Username field is blank");
-		 }
+        }
 	}else if($('input[name="password"]').val() == '') {
 		if(navigator.notification) {
 			navigator.notification.alert("Password field is blank", null, 'Login', 'Ok');
@@ -719,78 +742,78 @@ function login()
 			alert("Password field is blank");
 		}
 	}else{
-	  showLoader();
-	  //alert(window.innerHeight);
-      if($('input[name="username"]').val() == 'admin' && $('input[name="password"]').val() == 'admin') {
-		setTimeout(function(){
-			//goTo('menu');
-			hideLoader();
-			$.mobile.changePage( "freecheck.html" ,{ transition: "slide"});
-		},1000);	  
-	  }else{
-		  $.ajax({
-			  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/Authenticate",
-			  type: "POST",
-			  timeout: 60000 ,
-			  data: {userID: $('input[name="username"]').val(), password: $('input[name="password"]').val()},
-			  dataType: 'json',
-			  success:function(data, textStatus, jqXHR)
-			  {
-				hideLoader();
-				//console.log(data.hasOwnProperty("dist_nrr"));
-				if(data.hasOwnProperty("dist_nr"))
-				{
-					
-					localStorage.setItem("dist_nr",data.dist_nr);
-					localStorage.setItem("distName",data.dist_nm);
-                    localStorage.setItem("play_audit_sound","yes");
-                    localStorage.setItem("play_query_sound","yes");
-                    startBackgroundCron();
-					//console.log('Distributor number is '+localStorage.getItem("dist_nr"));
-					setTimeout(function(){
-						//goTo('menu');
-						checkDataCron = setInterval(checkNewDataFromServer,5000);
-						$.mobile.changePage( "menu.html" ,{ transition: "slide"});
-					});
-					
-				}else {
-					//alert(data.Exception.Message);
-					if(navigator.notification) {
-						navigator.notification.alert(data.Exception.Message, null, 'Login', 'Ok');
-					}else{
-						alert(data.Exception.Message);
-					}	
-
-				}
-			  },
-			  error: function(jqXHR, textStatus, errorThrown)
-			  {
-				 hideLoader();
-				 if(navigator.notification) {
-					navigator.notification.alert("Network Connection Error "+errorThrown, null, 'Login', 'Ok');
-				 }else{
-					alert("Network Connection Error "+errorThrown);
-					//$.mobile.changePage( "menu.html" ,{ transition: "slide"});
-				 }			
-			   }	  
-		   });
-       }	   
-    }	
+        showLoader();
+        //alert(window.innerHeight);
+        if($('input[name="username"]').val() == 'admin' && $('input[name="password"]').val() == 'admin') {
+            setTimeout(function(){
+                       //goTo('menu');
+                       hideLoader();
+                       $.mobile.changePage( "freecheck.html" ,{ transition: "slide"});
+                       },1000);
+        }else{
+            $.ajax({
+                   url: demo_service_url+"Authenticate",
+                   type: "POST",
+                   timeout: 60000 ,
+                   data: {userID: $('input[name="username"]').val(), password: $('input[name="password"]').val()},
+                   dataType: 'json',
+                   success:function(data, textStatus, jqXHR)
+                   {
+                   hideLoader();
+                   //console.log(data.hasOwnProperty("dist_nrr"));
+                   if(data.hasOwnProperty("dist_nr"))
+                   {
+                   
+                   localStorage.setItem("dist_nr",data.dist_nr);
+                   localStorage.setItem("distName",data.dist_nm);
+                   localStorage.setItem("play_audit_sound","yes");
+                   localStorage.setItem("play_query_sound","yes");
+                   startBackgroundCron();
+                   //console.log('Distributor number is '+localStorage.getItem("dist_nr"));
+                   setTimeout(function(){
+                              //goTo('menu');
+                              checkDataCron = setInterval(checkNewDataFromServer,5000);
+                              $.mobile.changePage( "menu.html" ,{ transition: "slide"});
+                              });
+                   
+                   }else {
+                   //alert(data.Exception.Message);
+                   if(navigator.notification) {
+                   navigator.notification.alert(data.Exception.Message, null, 'Login', 'Ok');
+                   }else{
+                   alert(data.Exception.Message);
+                   }
+                   
+                   }
+                   },
+                   error: function(jqXHR, textStatus, errorThrown)
+                   {
+                   hideLoader();
+                   if(navigator.notification) {
+                   navigator.notification.alert("Network Connection Error "+errorThrown, null, 'Login', 'Ok');
+                   }else{
+                   alert("Network Connection Error "+errorThrown);
+                   //$.mobile.changePage( "menu.html" ,{ transition: "slide"});
+                   }
+                   }
+                   });
+        }
+    }
 }
 
 function querySuccessJobs(tx, results) {
     if(results.rows.length > 0) {
 		logoutFail();
-    }else{		
+    }else{
 		querySavedDeliveryChecks();
-    }    
+    }
 }
 
 function querySavedDeliveryChecks() {
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	localDatabaseInstance.transaction(function checkSavedDeliveryChecks(tx) {			
-		tx.executeSql('SELECT * FROM DELIVERYCHECKS', [], querySuccessChecks, querySavedQueries);	
-	});
+	localDatabaseInstance.transaction(function checkSavedDeliveryChecks(tx) {
+                                      tx.executeSql('SELECT * FROM DELIVERYCHECKS', [], querySuccessChecks, querySavedQueries);
+                                      });
 }
 
 function querySuccessChecks(tx, results) {
@@ -798,14 +821,14 @@ function querySuccessChecks(tx, results) {
 		logoutFail();
     }else{
 		querySavedQueries();
-    }    
+    }
 }
 
 function querySavedQueries() {
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	localDatabaseInstance.transaction(function checkSavedQueries(tx) {			
-		tx.executeSql('SELECT * FROM QUERYSUBMIT', [], querySuccessQueries, logoutSuccess);	
-	});
+	localDatabaseInstance.transaction(function checkSavedQueries(tx) {
+                                      tx.executeSql('SELECT * FROM QUERYSUBMIT', [], querySuccessQueries, logoutSuccess);
+                                      });
 }
 
 function querySuccessQueries(tx, results) {
@@ -813,62 +836,62 @@ function querySuccessQueries(tx, results) {
 		logoutFail();
     }else{
 		logoutSuccess();
-    }    
+    }
 }
 
 function logout()
 {
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	localDatabaseInstance.transaction(function checkSavedJobs(tx) {
-		tx.executeSql('SELECT * FROM JOBSUBMIT', [], querySuccessJobs, querySavedDeliveryChecks);		
-	});	
+                                      tx.executeSql('SELECT * FROM JOBSUBMIT', [], querySuccessJobs, querySavedDeliveryChecks);
+                                      });
 }
 
 function removeOfflineTables()
 {
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	localDatabaseInstance.transaction(function dropTransaction(tx) {
-		tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
-		tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
-		tx.executeSql('DROP TABLE IF EXISTS QUERIES');
-	},logoutSuccess,logoutSuccess);	
+                                      tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
+                                      tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
+                                      tx.executeSql('DROP TABLE IF EXISTS QUERIES');
+                                      },logoutSuccess,logoutSuccess);
 }
 
 function logoutSuccess()
 {
 	// remove other tables
 	var play_audit_sound ="no",play_query_sound="no";
-	/*if(localStorage.getItem("play_audit_sound")!= null) {	
-		play_audit_sound = localStorage.getItem("play_audit_sound");
-	}	
-	if(localStorage.getItem("play_query_sound")!= null) {	
-		play_query_sound = localStorage.getItem("play_query_sound");
-	}*/
+	/*if(localStorage.getItem("play_audit_sound")!= null) {
+     play_audit_sound = localStorage.getItem("play_audit_sound");
+     }
+     if(localStorage.getItem("play_query_sound")!= null) {
+     play_query_sound = localStorage.getItem("play_query_sound");
+     }*/
 	setTimeout(function(){
-		localStorage.clear();
-	});
+               localStorage.clear();
+               });
 	setTimeout(function(){
-		//document.location = "index.html";
-		localStorage.setItem("play_audit_sound","yes");
-		localStorage.setItem("play_query_sound","yes");
-		//alert(play_audit_sound+' : '+play_query_sound);
-		clearTimeout(checkDataCron);
-		checkDataCron = false;
-		$.mobile.changePage( "index.html", { transition: "slide" , reverse : true} );
-	});
+               //document.location = "index.html";
+               localStorage.setItem("play_audit_sound","yes");
+               localStorage.setItem("play_query_sound","yes");
+               //alert(play_audit_sound+' : '+play_query_sound);
+               clearTimeout(checkDataCron);
+               checkDataCron = false;
+               $.mobile.changePage( "index.html", { transition: "slide" , reverse : true} );
+               });
 }
 
 function logoutFail()
 {
 	if(navigator.notification) {
 		navigator.notification.alert("You have data to be submitted.Please submit before logging out", null, 'Login', 'Ok');
-	 }else{
-		alert("You have data to be submitted.Please submit before logging out");		
-	 }
+    }else{
+		alert("You have data to be submitted.Please submit before logging out");
+    }
 }
 
 function isBigEnough(element) {
-  return element >= 10;
+    return element >= 10;
 }
 var filtered = [12, 5, 8, 130, 44].filter(isBigEnough);
 
@@ -876,137 +899,137 @@ function getAuditList()
 {
 	localStorage.setItem("screen","delivery_audit");
     var delivery_category_filter = 'All';
-	if(localStorage.getItem('delivery_catalog_filter') != null) {	
+	if(localStorage.getItem('delivery_catalog_filter') != null) {
 		switch(localStorage.getItem('delivery_catalog_filter')) {
-		  case 'all':                      
-			delivery_category_filter = 'All';
-			break;			
-		  case 'C':                      
-			delivery_category_filter = 'Catalogue';
-			break;                     
-		  case 'N':                      
-			delivery_category_filter = 'News';
-			break;                     
-		  case 'A':                      
-			delivery_category_filter = 'Address';
-			break;                     
-		  case 'Q':                      
-			delivery_category_filter = 'Query';
-			break;                     
-		  default:		
-			break;                     
+            case 'all':
+                delivery_category_filter = 'All';
+                break;
+            case 'C':
+                delivery_category_filter = 'Catalogue';
+                break;
+            case 'N':
+                delivery_category_filter = 'News';
+                break;
+            case 'A':
+                delivery_category_filter = 'Address';
+                break;
+            case 'Q':
+                delivery_category_filter = 'Query';
+                break;
+            default:
+                break;
 		}
 	}
-	$("#catalog_type").html(delivery_category_filter);	
-	showLoader();	
+	$("#catalog_type").html(delivery_category_filter);
+	showLoader();
 	//$("#delivery_audit").css({'background': 'url(images/tr_bg1.png)', 'height': $(this).height()});
 	
 	/*
-				“cont_nr”  => Walker No,
-				“cont_inv_nr” => CW
-				“del_terr_cd” => DT number, 
-				dist_nr    => AREA
-				ivr_serv_dtime => current time,
-				ivr_user_dtime => current time, 
-				“deliveryday” => day name
-	*/
+     “cont_nr”  => Walker No,
+     “cont_inv_nr” => CW
+     “del_terr_cd” => DT number,
+     dist_nr    => AREA
+     ivr_serv_dtime => current time,
+     ivr_user_dtime => current time,
+     “deliveryday” => day name
+     */
 	//alert(localStorage.getItem("dist_nr"));
-    auditListRequestInProgress = true;	
+    auditListRequestInProgress = true;
 	$.ajax({
-	  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetFromIvrByManager",
-	  type: "POST",
-	  timeout: 60000 ,
-	  data: {dist_nr: localStorage.getItem("dist_nr")},
-	  dataType: 'json',
-	  success:function(data, textStatus, jqXHR)
-	  {
-			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr
-			//console.log(JSON.stringify(data));			
-			/*data= {"from_ivr":[{"cont_nr":9808236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9806236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9808636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9908636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918736,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"A","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":moment(),"ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null}]};*/
-			auditListRequestInProgress = false;	 
-			auditSuccess(data);
-      },
-      error: function(jqXHR, textStatus, errorThrown)	  
-      {
-            //if fails
-		auditListRequestInProgress = false;
-		hideLoader();
-		/*if(navigator.notification) {
+           url: demo_service_url+"GetFromIvrByManager",
+           type: "POST",
+           timeout: 60000 ,
+           data: {dist_nr: localStorage.getItem("dist_nr")},
+           dataType: 'json',
+           success:function(data, textStatus, jqXHR)
+           {
+           //console.log(data.hasOwnProperty("dist_nrr"));from_ivr
+           //console.log(JSON.stringify(data));
+           /*data= {"from_ivr":[{"cont_nr":9808236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9806236,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9808636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9908636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918636,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918736,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9918746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"Q","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"N","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"A","area_cd":3050234,"ivr_serv_dtime":"\/Date(1382487136863)\/","ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null},{"cont_nr":9919746,"cont_inv_nr":377149125,"del_terr_cd":6,"dist_net_cd":"C","area_cd":3050234,"ivr_serv_dtime":moment(),"ivr_user_dtime":null,"batch":69705,"DeliveryDay":null,"DeliveryDate":null}]};*/
+           auditListRequestInProgress = false;
+           auditSuccess(data);
+           },
+           error: function(jqXHR, textStatus, errorThrown)
+           {
+           //if fails
+           auditListRequestInProgress = false;
+           hideLoader();
+           /*if(navigator.notification) {
 			navigator.notification.alert("Network Connection Error "+errorThrown, function(){history.back()}, 'Delivery Audit', 'Ok');
-		}else{
+            }else{
 			alert("Network Connection Error "+errorThrown);
-		}*/
-        readAuditsFromDatabase();		
-      }	  
-	});	
+            }*/
+           readAuditsFromDatabase();
+           }
+           });
 }
 
-function auditSuccess(data) 
+function auditSuccess(data)
 {
     var selectAreaList = new Array();
 	if(data.from_ivr.length)
-	{	
+	{
 		var html = "";
 		var catalogCount = 0;
 		
 		var audit_template_html = $("#audit_template").html();
 		
 		$.each(data.from_ivr, function(i,audits){
-			//console.log(JSON.stringify(audits));
-			tempHTML =  audit_template_html;
-            tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, audits.area_cd);
-            tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
-			tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, audits.cont_inv_nr);
-			tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, audits.cont_nr);		
-			tempHTML = tempHTML.replace(/{{IVR_SERV_DTIME}}/gi, moment(audits.ivr_serv_dtime).format("DD MMM YYYY HH:mm"));
-			tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, audits.del_terr_cd);
-			tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, audits.dist_net_cd);
-			
-			var ivr_time = moment(audits.ivr_serv_dtime);
-			var now = moment();
-			var difference_in_hours = now.diff(ivr_time, 'hours');
-			var class_name ="";
-			if(difference_in_hours >= 24) {
-				class_name = "delivery_audit_bg1";
-			}else if(difference_in_hours >= 12) {
-				class_name = "delivery_audit_bg2";
-			}else if(difference_in_hours < 12) {
-				class_name = "delivery_audit_bg3";
-			}				
-			tempHTML = tempHTML.replace(/{{class_name}}/gi, class_name);
-			
-			if(localStorage.getItem('delivery_catalog_filter') == null) {						
-				
-				if(localStorage.getItem("delivery_filter")== null) {
-					
-					if(selectAreaList.indexOf(audits.area_cd) == -1) {
-						selectAreaList.push(audits.area_cd);
-					}
-					localStorage.setItem("deliverySelectAreaList",JSON.stringify(selectAreaList));
-					//tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
-					html += tempHTML;
-					catalogCount++;
-				}else if(audits.area_cd == localStorage.getItem("delivery_filter")) {
-					html += tempHTML;
-					catalogCount++
-				}
-			}else if(audits.dist_net_cd == localStorage.getItem("delivery_catalog_filter")) {
-				
-				if(localStorage.getItem("delivery_filter")== null) {
-					
-					if(selectAreaList.indexOf(audits.area_cd) == -1) {
-						selectAreaList.push(audits.area_cd);
-					}
-					localStorage.setItem("deliverySelectAreaList",JSON.stringify(selectAreaList));
-					//tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
-					html += tempHTML;
-					catalogCount++;
-				}else if(audits.area_cd == localStorage.getItem("delivery_filter")) {
-					html += tempHTML;
-					catalogCount++
-				}																	
-			}
-		});		
+               //console.log(JSON.stringify(audits));
+               tempHTML =  audit_template_html;
+               tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, audits.area_cd);
+               tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
+               tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, audits.cont_inv_nr);
+               tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, audits.cont_nr);
+               tempHTML = tempHTML.replace(/{{IVR_SERV_DTIME}}/gi, moment(audits.ivr_serv_dtime).format("DD MMM YYYY HH:mm"));
+               tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, audits.del_terr_cd);
+               tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, audits.dist_net_cd);
+               
+               var ivr_time = moment(audits.ivr_serv_dtime);
+               var now = moment();
+               var difference_in_hours = now.diff(ivr_time, 'hours');
+               var class_name ="";
+               if(difference_in_hours >= 24) {
+               class_name = "delivery_audit_bg1";
+               }else if(difference_in_hours >= 12) {
+               class_name = "delivery_audit_bg2";
+               }else if(difference_in_hours < 12) {
+               class_name = "delivery_audit_bg3";
+               }
+               tempHTML = tempHTML.replace(/{{class_name}}/gi, class_name);
+               
+               if(localStorage.getItem('delivery_catalog_filter') == null) {
+               
+               if(localStorage.getItem("delivery_filter")== null) {
+               
+               if(selectAreaList.indexOf(audits.area_cd) == -1) {
+               selectAreaList.push(audits.area_cd);
+               }
+               localStorage.setItem("deliverySelectAreaList",JSON.stringify(selectAreaList));
+               //tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
+               html += tempHTML;
+               catalogCount++;
+               }else if(audits.area_cd == localStorage.getItem("delivery_filter")) {
+               html += tempHTML;
+               catalogCount++
+               }
+               }else if(audits.dist_net_cd == localStorage.getItem("delivery_catalog_filter")) {
+               
+               if(localStorage.getItem("delivery_filter")== null) {
+               
+               if(selectAreaList.indexOf(audits.area_cd) == -1) {
+               selectAreaList.push(audits.area_cd);
+               }
+               localStorage.setItem("deliverySelectAreaList",JSON.stringify(selectAreaList));
+               //tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, audits.dist_nr);
+               html += tempHTML;
+               catalogCount++;
+               }else if(audits.area_cd == localStorage.getItem("delivery_filter")) {
+               html += tempHTML;
+               catalogCount++
+               }
+               }
+               });
 		
 		$("#catalog_count").html(' ('+catalogCount+') ');
 		$("#delivery_audit_content").html( html );
@@ -1016,7 +1039,7 @@ function auditSuccess(data)
 		
 		serviceResponseForAuditList = data.from_ivr;
 		if(savingAuditListDataToDb == false) {
-			savingAuditListDataToDb = true;			
+			savingAuditListDataToDb = true;
 			localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 			localDatabaseInstance.transaction(dropAuditListTable, function(){savingAuditListDataToDb = false}, dropAuditListTableComplete);
 		}
@@ -1027,11 +1050,11 @@ function auditSuccess(data)
 			if(navigator.notification) {
 				navigator.notification.alert("No Data found", null, 'Delivery Audit', 'Ok');
 			}else{
-				alert("No Data found");						
+				alert("No Data found");
 			}
-		}						
+		}
 	}
-	else 
+	else
 	{
 		/**/
         console.log('Drop table');
@@ -1049,7 +1072,7 @@ function auditSuccess(data)
 }
 
 function readAuditsFromDatabase()
-{		 
+{
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	localDatabaseInstance.transaction(queryreadAudits, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);});
 }
@@ -1067,20 +1090,20 @@ function auditSuccessOffline(tx, results) {
 	var len = results.rows.length;
     console.log("DELIVERY_AUDIT table: " + len + " rows found.");
 	if(len > 0) {
-	
-		var selectAreaList = new Array();			
+        
+		var selectAreaList = new Array();
 		var html = "";
-		var catalogCount = 0;		
+		var catalogCount = 0;
 		var audit_template_html = $("#audit_template").html();
 		//results.rows.item(counter)
 		var selectAreaList = new Array();
 		for(i =0; i < len; i++){
-						
+            
 			tempHTML =  audit_template_html;
             tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, results.rows.item(i).area_cd);
             tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, results.rows.item(i).dist_nr);
 			tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, results.rows.item(i).cont_inv_nr);
-			tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, results.rows.item(i).cont_nr);		
+			tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, results.rows.item(i).cont_nr);
 			tempHTML = tempHTML.replace(/{{IVR_SERV_DTIME}}/gi, moment(results.rows.item(i).ivr_serv_dtime).format("DD MMM YYYY HH:mm"));
 			tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, results.rows.item(i).del_terr_cd);
 			tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, results.rows.item(i).dist_net_cd);
@@ -1095,10 +1118,10 @@ function auditSuccessOffline(tx, results) {
 				class_name = "delivery_audit_bg2";
 			}else if(difference_in_hours < 12) {
 				class_name = "delivery_audit_bg3";
-			}				
+			}
 			tempHTML = tempHTML.replace(/{{class_name}}/gi, class_name);
 			
-			if(localStorage.getItem('delivery_catalog_filter') == null) {						
+			if(localStorage.getItem('delivery_catalog_filter') == null) {
 				
 				if(localStorage.getItem("delivery_filter")== null) {
 					
@@ -1127,9 +1150,9 @@ function auditSuccessOffline(tx, results) {
 				}else if(results.rows.item(i).area_cd == localStorage.getItem("delivery_filter")) {
 					html += tempHTML;
 					catalogCount++
-				}																	
+				}
 			}
-		}		
+		}
 		$("#catalog_count").html(' ('+catalogCount+') ');
 		$("#delivery_audit_content").html( html );
 		hideLoader();
@@ -1137,7 +1160,7 @@ function auditSuccessOffline(tx, results) {
 			if(navigator.notification) {
 				navigator.notification.alert("No Data found", null, 'Delivery Audit', 'Ok');
 			}else{
-				alert("No Data found");						
+				alert("No Data found");
 			}
 		}
 	}else{
@@ -1149,7 +1172,7 @@ function auditSuccessOffline(tx, results) {
 			alert("No Data found");
 			setTimeout(function(){goBack('menu')});
 		}
-    }	
+    }
 }
 
 function deliveryCheck(walker_no,cw,dt,area,dist_net,dist_nr)
@@ -1167,17 +1190,17 @@ function deliveryCheck(walker_no,cw,dt,area,dist_net,dist_nr)
 }
 
 function getAuditDetail()
-{	
+{
 	var audit_detail_html = $("#audit_detail").html();
-
+    
 	var tempHTML = audit_detail_html;
-
+    
     tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, localStorage.getItem("AUDIT_WALKER_NO"));
 	tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, localStorage.getItem("AUDIT_CW"));
 	tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, localStorage.getItem("AUDIT_DT"));
 	tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, localStorage.getItem("AUDIT_AREA"));
 	
-	$("#audit_detail").html(tempHTML);	
+	$("#audit_detail").html(tempHTML);
 	
 	localStorage.setItem("delivery_confirmation_count","0");
 	
@@ -1185,17 +1208,17 @@ function getAuditDetail()
 }
 
 function deliveryCheckObject(guid, unique_identifier, dist_nr, dist_name,device_time,utc_time,dist_net_code,audit_cw,audit_dt,lat,lng) {
-  this.fromPdaId = guid;
-  this.imei = unique_identifier;
-  this.distNr = dist_nr;
-  this.distName = dist_name;
-  this.deviceTime = device_time;
-  this.utcTime = utc_time;
-  this.distNetCode = dist_net_code;
-  this.contInvNr = audit_cw;
-  this.delTerrCd = audit_dt;
-  this.latitude = lat;
-  this.longitude = lng;
+    this.fromPdaId = guid;
+    this.imei = unique_identifier;
+    this.distNr = dist_nr;
+    this.distName = dist_name;
+    this.deviceTime = device_time;
+    this.utcTime = utc_time;
+    this.distNetCode = dist_net_code;
+    this.contInvNr = audit_cw;
+    this.delTerrCd = audit_dt;
+    this.latitude = lat;
+    this.longitude = lng;
 }
 
 // create an array restaurants
@@ -1203,7 +1226,7 @@ var deliveryCheckConfirmations = [];
 // add objects to the array
 
 function delivery_confirmation_action() {
-    var filename = $("#location_status_icon").attr("src");	
+    var filename = $("#location_status_icon").attr("src");
 	var splitArray = filename.split("/");
 	var image = splitArray[splitArray.length-1];
 	if(image == 'location_available.png') {
@@ -1211,88 +1234,88 @@ function delivery_confirmation_action() {
 		if(count < 6) {
 			//showLoader();
 			count++;
-			var unique_identifier  = localStorage.getItem("unique_identifier");  // "9774d56d682e549c";			
+			var unique_identifier  = localStorage.getItem("unique_identifier");  // "9774d56d682e549c";
 			//var lat = "30";//position.coords.latitude;
-			//var lng = "40";//position.coords.longitude	yyyy-mm-dd HH:MM:SS			 
+			//var lng = "40";//position.coords.longitude	yyyy-mm-dd HH:MM:SS
 			navigator.geolocation.getCurrentPosition(function(position){
-				var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
-				deliveryCheckConfirmations.push(new deliveryCheckObject(guid, unique_identifier, localStorage.getItem("dist_nr"), localStorage.getItem("distName"),moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),localStorage.getItem("DIST_NET_CODE"),localStorage.getItem("AUDIT_CW"),localStorage.getItem("AUDIT_DT"),position.coords.latitude,position.coords.longitude));
-				localStorage.setItem("delivery_checks",JSON.stringify(deliveryCheckConfirmations));
-				localStorage.setItem("delivery_confirmation_count",count);
-				$("#delivery_confirmation_count").text(count);
-                 if(count == 6) {
-                     if($("#check_submit_btn").hasClass("input_bg")) {
-                        $("#check_submit_btn").removeClass("input_bg");
-                     }
-                     if(!$("#check_submit_btn").hasClass("disable")) {
-                        $("#check_submit_btn").addClass("disable");
-                     }
-                }
-				//hideLoader();
-			}, function(error){
-				//hideLoader();
-				navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
-			} , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
+                                                     var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+                                                     deliveryCheckConfirmations.push(new deliveryCheckObject(guid, unique_identifier, localStorage.getItem("dist_nr"), localStorage.getItem("distName"),moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),localStorage.getItem("DIST_NET_CODE"),localStorage.getItem("AUDIT_CW"),localStorage.getItem("AUDIT_DT"),position.coords.latitude,position.coords.longitude));
+                                                     localStorage.setItem("delivery_checks",JSON.stringify(deliveryCheckConfirmations));
+                                                     localStorage.setItem("delivery_confirmation_count",count);
+                                                     $("#delivery_confirmation_count").text(count);
+                                                     if(count == 6) {
+                                                     if($("#check_submit_btn").hasClass("input_bg")) {
+                                                     $("#check_submit_btn").removeClass("input_bg");
+                                                     }
+                                                     if(!$("#check_submit_btn").hasClass("disable")) {
+                                                     $("#check_submit_btn").addClass("disable");
+                                                     }
+                                                     }
+                                                     //hideLoader();
+                                                     }, function(error){
+                                                     //hideLoader();
+                                                     navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
+                                                     } , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
 			
 		}else{
 			/*if(navigator.notification) {
-				navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
-			}else{
-				alert("You can confirm maximum 6 times");						
-			}*/
+             navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
+             }else{
+             alert("You can confirm maximum 6 times");
+             }*/
 			if($("#check_submit_btn").hasClass("input_bg")) {
 				$("#check_submit_btn").removeClass("input_bg");
 			}
 			if(!$("#check_submit_btn").hasClass("disable")) {
 				$("#check_submit_btn").addClass("disable");
 			}
-		}		
+		}
 	}else{
 		/*if(navigator.notification) {
-				navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
-		}else{
-				alert("Location not available.Please try again");						
-		}*/
+         navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
+         }else{
+         alert("Location not available.Please try again");
+         }*/
 	}
 }
 
 function S4() {
     return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
 }
- 
+
 function submitDeliveryConfirmation()
 {
 	showLoader();
 	//var UTCstring = (new Date()).toUTCString();DD MMM YYYY HH:mm
-	//console.log(UTCstring);9774d56d682e549c	
-	//var dt = {"Count" : "1"};	
-	//alert(dt.Count);	
+	//console.log(UTCstring);9774d56d682e549c
+	//var dt = {"Count" : "1"};
+	//alert(dt.Count);
 	//console.log(JSON.stringify(deliveryCheckConfirmations));
-    //storeDeliveryConfirmation();	
-	if(deliveryCheckConfirmations.length > 0) {		
+    //storeDeliveryConfirmation();
+	if(deliveryCheckConfirmations.length > 0) {
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/SubmitDeliveryConfirmation",
-		  type: "POST",
-		  timeout: 60000 ,
-		  data: deliveryCheckConfirmations[0],
-		  success:function(data, textStatus, jqXHR)
-		  {		
-			//success callback			
-			//alert('Delivery Checks success'+data.Count);
-			deliveryCheckConfirmations.shift();
-			if(deliveryCheckConfirmations.length == 0) {
-				hideLoader();
-				goBack('delivery_audit');
-			}else{
-				setTimeout('submitDeliveryConfirmation()',0);
-			}
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {
-			 //hideLoader();
-			 storeDeliveryConfirmation();			
-		   }	  
-		});	
+               url: demo_service_url+"SubmitDeliveryConfirmation",
+               type: "POST",
+               timeout: 60000 ,
+               data: deliveryCheckConfirmations[0],
+               success:function(data, textStatus, jqXHR)
+               {
+               //success callback
+               //alert('Delivery Checks success'+data.Count);
+               deliveryCheckConfirmations.shift();
+               if(deliveryCheckConfirmations.length == 0) {
+               hideLoader();
+               goBack('delivery_audit');
+               }else{
+               setTimeout('submitDeliveryConfirmation()',0);
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               {
+               //hideLoader();
+               storeDeliveryConfirmation();
+               }
+               });
 	}else{
 		hideLoader();
 		goBack('delivery_audit');
@@ -1305,19 +1328,19 @@ function storeDeliveryConfirmation()
 {
 	console.log(JSON.stringify(deliveryCheckConfirmations));
 	if(savingDeliveryChecksDataToDb == false) {
-		savingDeliveryChecksDataToDb = true;			
+		savingDeliveryChecksDataToDb = true;
 		localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 		localDatabaseInstance.transaction(createDeliveryChecksTable, function(){savingDeliveryChecksDataToDb = false}, createDeliveryChecksTableComplete);
 	}
 }
 
 function createDeliveryChecksTable(tx) {
-	 //tx.executeSql('DROP TABLE IF EXISTS QUERIES');
-	 //tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
-	 //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
-	 //tx.executeSql('DROP TABLE IF EXISTS DELIVERYCHECKS');
-	 //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_CHECKS');
-	 tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERYCHECKS (fromPdaId, imei, distNr, distName, deviceTime, utcTime, distNetCode, contInvNr, delTerrCd, latitude, longitude )');     
+    //tx.executeSql('DROP TABLE IF EXISTS QUERIES');
+    //tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
+    //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
+    //tx.executeSql('DROP TABLE IF EXISTS DELIVERYCHECKS');
+    //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_CHECKS');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS DELIVERYCHECKS (fromPdaId, imei, distNr, distName, deviceTime, utcTime, distNetCode, contInvNr, delTerrCd, latitude, longitude )');
 }
 
 function createDeliveryChecksTableComplete() {
@@ -1333,14 +1356,14 @@ function saveDeliveryChecksDataToDb(deliveryCheckConfirmations,l)
 		console.log("deliveryCheckConfirmations Length : " + deliveryCheckConfirmations.length + " l : " + l);
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-            tx.executeSql("INSERT INTO DELIVERYCHECKS (fromPdaId, imei, distNr, distName, deviceTime, utcTime, distNetCode, contInvNr, delTerrCd, latitude, longitude ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
-              [deliveryCheckConfirmations[l].fromPdaId, deliveryCheckConfirmations[l].imei, deliveryCheckConfirmations[l].distNr, deliveryCheckConfirmations[l].distName, deliveryCheckConfirmations[l].deviceTime, deliveryCheckConfirmations[l].utcTime, deliveryCheckConfirmations[l].distNetCode, deliveryCheckConfirmations[l].contInvNr, deliveryCheckConfirmations[l].delTerrCd, deliveryCheckConfirmations[l].latitude,deliveryCheckConfirmations[l].longitude],function(){},function(err){
-			  console.log("Error processing SQL: "+err.code+' '+err.message);
-			  savingDeliveryChecksDataToDb = false});
-        }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);savingDeliveryChecksDataToDb = false}, function successCB() {
-            /* Recursive Function For Inserting the State in Local Db */
-            saveDeliveryChecksDataToDb(deliveryCheckConfirmations, (l + 1));
-        });
+                                          tx.executeSql("INSERT INTO DELIVERYCHECKS (fromPdaId, imei, distNr, distName, deviceTime, utcTime, distNetCode, contInvNr, delTerrCd, latitude, longitude ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
+                                                        [deliveryCheckConfirmations[l].fromPdaId, deliveryCheckConfirmations[l].imei, deliveryCheckConfirmations[l].distNr, deliveryCheckConfirmations[l].distName, deliveryCheckConfirmations[l].deviceTime, deliveryCheckConfirmations[l].utcTime, deliveryCheckConfirmations[l].distNetCode, deliveryCheckConfirmations[l].contInvNr, deliveryCheckConfirmations[l].delTerrCd, deliveryCheckConfirmations[l].latitude,deliveryCheckConfirmations[l].longitude],function(){},function(err){
+                                                        console.log("Error processing SQL: "+err.code+' '+err.message);
+                                                        savingDeliveryChecksDataToDb = false});
+                                          }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);savingDeliveryChecksDataToDb = false}, function successCB() {
+                                          /* Recursive Function For Inserting the State in Local Db */
+                                          saveDeliveryChecksDataToDb(deliveryCheckConfirmations, (l + 1));
+                                          });
     }
     else {
 		savingDeliveryChecksDataToDb = false;
@@ -1351,34 +1374,34 @@ function saveDeliveryChecksDataToDb(deliveryCheckConfirmations,l)
 		console.log("Remove Audit from database");
 	    localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	    localDatabaseInstance.transaction(function removeAudit(tx) {
-		//sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_inv_nr = " + localStorage.getItem("AUDIT_CW");
-        sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_nr = " + localStorage.getItem("AUDIT_WALKER_NO")+" AND cont_inv_nr = " + localStorage.getItem("AUDIT_CW")+" AND dist_nr = " + localStorage.getItem("CHECK_DIST_NR")+" AND del_terr_cd = " + localStorage.getItem("AUDIT_DT");
-		tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);goBack('delivery_audit')}, function(){goBack('delivery_audit')});	   	
+                                          //sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_inv_nr = " + localStorage.getItem("AUDIT_CW");
+                                          sql = "DELETE FROM DELIVERY_AUDIT WHERE cont_nr = " + localStorage.getItem("AUDIT_WALKER_NO")+" AND cont_inv_nr = " + localStorage.getItem("AUDIT_CW")+" AND dist_nr = " + localStorage.getItem("CHECK_DIST_NR")+" AND del_terr_cd = " + localStorage.getItem("AUDIT_DT");
+                                          tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);goBack('delivery_audit')}, function(){goBack('delivery_audit')});
     }
 }
 
 /********
-console.log("Saved job1 for submission");
-	  localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	  localDatabaseInstance.transaction(function removeJob(tx) {
-		sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
-		tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
-}
-/********/
+ console.log("Saved job1 for submission");
+ localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+ localDatabaseInstance.transaction(function removeJob(tx) {
+ sql = "DELETE FROM OUTSTANDINGJOBS WHERE cont_nr = " + jobSubmitData.cont_nr;
+ tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, getOutstandingJobs);
+ }
+ /********/
 
 function prepareSavedDeliveryChecksSubmit()
 {
-	if(navigator.connection) {		
-		var networkState = navigator.connection.type;			 
-		if(networkState != Connection.NONE) {	 
+	if(navigator.connection) {
+		var networkState = navigator.connection.type;
+		if(networkState != Connection.NONE) {
 			localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 			localDatabaseInstance.transaction(function querySavedDeliveryChecks(tx) {
-				tx.executeSql('SELECT * FROM DELIVERYCHECKS', [], submitSavedDeliveryChecks, function(err){   console.log("No Delivery Checks Found for Submission");
-				   //clearInterval(submitDeliveryChecksCron);
-				});
-		      });
+                                              tx.executeSql('SELECT * FROM DELIVERYCHECKS', [], submitSavedDeliveryChecks, function(err){   console.log("No Delivery Checks Found for Submission");
+                                                            //clearInterval(submitDeliveryChecksCron);
+                                                            });
+                                              });
 		}
-	}	
+	}
 }
 
 function submitSavedDeliveryChecks(tx, results) {
@@ -1387,7 +1410,7 @@ function submitSavedDeliveryChecks(tx, results) {
 	if(len > 0) {
 		submittedChecks = [];
 	    startSubmittingChecks(results,0);
-	}	
+	}
 }
 
 function startSubmittingChecks(results,counter)
@@ -1396,29 +1419,29 @@ function startSubmittingChecks(results,counter)
 		var tempObj = new deliveryCheckObject(results.rows.item(counter).fromPdaId, results.rows.item(counter).imei, results.rows.item(counter).distNr, results.rows.item(counter).distName,results.rows.item(counter).deviceTime,results.rows.item(counter).utcTime,results.rows.item(counter).distNetCode,results.rows.item(counter).contInvNr,results.rows.item(counter).delTerrCd,results.rows.item(counter).latitude,results.rows.item(counter).longitude);
 		//console.log(tempObj);
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/SubmitDeliveryConfirmation",
-		  type: "POST",
-		  timeout: 60000 ,
-		  data: tempObj,
-		  success:function(data, textStatus, jqXHR)
-		  {		
-			submittedChecks.push(results.rows.item(counter).fromPdaId);	
-			setTimeout(function(){startSubmittingChecks(results,(counter+1))});					
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {				
-			//submittedChecks.push(results.rows.item(counter).fromPdaId);	
-			setTimeout(function(){startSubmittingChecks(results,(counter+1))});				
-		  }	  
-	   });
-   }else{
+               url: demo_service_url+"SubmitDeliveryConfirmation",
+               type: "POST",
+               timeout: 60000 ,
+               data: tempObj,
+               success:function(data, textStatus, jqXHR)
+               {
+               submittedChecks.push(results.rows.item(counter).fromPdaId);
+               setTimeout(function(){startSubmittingChecks(results,(counter+1))});
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               {
+               //submittedChecks.push(results.rows.item(counter).fromPdaId);
+               setTimeout(function(){startSubmittingChecks(results,(counter+1))});
+               }
+               });
+    }else{
 		removeSubmitedChecks();
-   }
+    }
 }
 
 function removeSubmitedChecks()
 {
-	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);	
+	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	localDatabaseInstance.transaction(queryRemoveSubmittedDeliveryChecks, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)}, function(){});
 }
 
@@ -1436,7 +1459,7 @@ function queryRemoveSubmittedDeliveryChecks(tx) {
 	//console.log(joinedItems);
     sql = "DELETE FROM DELIVERYCHECKS WHERE fromPdaId IN ("+joinedItems+")";
 	//console.log(sql);
-	tx.executeSql(sql);     
+	tx.executeSql(sql);
 }
 
 
@@ -1444,142 +1467,142 @@ function queryRemoveSubmittedDeliveryChecks(tx) {
 
 
 function delivery_check_back() {
-   
-   /*if($.mobile.activePage.attr('id') == "delivery_check") {
-		if(localStorage.getItem("delivery_confirmation_count") < 5) {
-		
-			if(navigator.notification) {
-				navigator.notification.alert("Please complete at least 5 delivery confirmations", null, 'PMP', 'Ok');
-			}else {
-				alert("Please complete at least 5 delivery confirmations");
-			}
-		
-		}else {
-			localStorage.removeItem("delivery_confirmation_count");
-			setTimeout(function(){back()});		
-		}
-	}else if($.mobile.activePage.attr('id') == "menu"){
-		setTimeout(function(){back()});
-	}*/
+    
+    /*if($.mobile.activePage.attr('id') == "delivery_check") {
+     if(localStorage.getItem("delivery_confirmation_count") < 5) {
+     
+     if(navigator.notification) {
+     navigator.notification.alert("Please complete at least 5 delivery confirmations", null, 'PMP', 'Ok');
+     }else {
+     alert("Please complete at least 5 delivery confirmations");
+     }
+     
+     }else {
+     localStorage.removeItem("delivery_confirmation_count");
+     setTimeout(function(){back()});
+     }
+     }else if($.mobile.activePage.attr('id') == "menu"){
+     setTimeout(function(){back()});
+     }*/
 	/*if($.mobile.activePage.attr('id') != "menu"){
-		setTimeout(function(){back()});
-	}else if($.mobile.activePage.attr('id') == "delivery_check"){
-		alert('delivery_check');
-		//submitDeliveryConfirmation(1);	
-	}*/	
+     setTimeout(function(){back()});
+     }else if($.mobile.activePage.attr('id') == "delivery_check"){
+     alert('delivery_check');
+     //submitDeliveryConfirmation(1);
+     }*/
 	var networkState = navigator.connection.type;
 	if(networkState == Connection.NONE) {
 		// Store data in sqllite
 		storeDeliveryConfirmation();
 	}else{
-	  navigator.geolocation.getCurrentPosition(submitDeliveryConfirmation, function(error){			
-		navigator.notification.alert("Could not retreive current location due to "+error.message, null, 'Delivery Checks', 'Ok');
-	  } , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
+        navigator.geolocation.getCurrentPosition(submitDeliveryConfirmation, function(error){
+                                                 navigator.notification.alert("Could not retreive current location due to "+error.message, null, 'Delivery Checks', 'Ok');
+                                                 } , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
 	}
 	//submitDeliveryConfirmation(1);
 }
 
 function getOutstandingJobs()
 {
-	/*	Sample:{"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]}	
-	*/
+	/*	Sample:{"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]}
+     */
 	//$("#Outstandingjob").css({'background': 'url(images/tr_bg1.png)', 'height': $(this).height()});
 	
 	localStorage.setItem("screen","Outstandingjob");
 	showLoader();
-		
+    
 	var selectAreaList = new Array();
 	outstandingListRequestInProgress = true;
 	$.ajax({
-	  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetToIvrByManager",
-	  type: "POST",
-	  timeout: 60000 ,
-	  data: {dist_nr: localStorage.getItem("dist_nr")},
-	  dataType: 'json',
-	  success:function(data, textStatus, jqXHR)
-      {
-			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr
-			
-			/*data = {"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]};*/
-			outstandingListRequestInProgress = false;
-			if(data.to_ivr && data.to_ivr.length)
-			{
-				var outstanding_jobs_template = $("#outstanding_jobs_template").html();
-
-				//console.log(audit_template_html);
-				var html = "";
-				var tempHTML = "";
-				$.each(data.to_ivr, function(i,outstandingJobs){
-					//console.log(JSON.stringify(audits));
-					tempHTML =  outstanding_jobs_template;
-					tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, outstandingJobs.area_cd);
-					tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, outstandingJobs.cont_inv_nr);
-					tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, outstandingJobs.cont_nr);
-					tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, outstandingJobs.dist_nr);
-					
-					
-					tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, outstandingJobs.del_terr_cd);
-					tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, outstandingJobs.dist_net_cd);
-					
-					if(localStorage.getItem("outstandingjob_filter")== null) {					
-						if(selectAreaList.indexOf(outstandingJobs.area_cd) == -1) {
-							selectAreaList.push(outstandingJobs.area_cd);
-						}
-						localStorage.setItem("outstandingJobSelectAreaList",JSON.stringify(selectAreaList));
-						html += tempHTML;
-					}else if(outstandingJobs.area_cd == localStorage.getItem("outstandingjob_filter")) {
-						html += tempHTML;											
-					}
-                       //if(i == 0) console.log(html);
-				});
-				$("#outstanding_jobs_content").html( html );
-				hideLoader();
+           url: demo_service_url+"GetToIvrByManager",
+           type: "POST",
+           timeout: 60000 ,
+           data: {dist_nr: localStorage.getItem("dist_nr")},
+           dataType: 'json',
+           success:function(data, textStatus, jqXHR)
+           {
+           //console.log(data.hasOwnProperty("dist_nrr"));from_ivr
            
-				
-				/*** Keep a copy in local Database ***/
-				
-				serviceResponseForOutstandingJobs = data.to_ivr;
-				if(savingOutstandingListDataToDb == false) {
-					savingOutstandingListDataToDb = true;			
-					localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-					localDatabaseInstance.transaction(dropOutstandingJobsTable, function(){savingOutstandingListDataToDb = false}, dropOutstandingJobsTableComplete);
-				}				
-				/*** Keep a copy in local Database ***/
-				
-				//console.log(selectAreaList);				
-				//console.log('Local Storage '+localStorage.getItem("selectAreaList"));
-				
-			}else {
-				outstandingListRequestInProgress = false;
-                /**/
-                localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-                localDatabaseInstance.transaction(dropOutstandingJobsTable, null, null);
-                /**/
-                hideLoader();			
-				if(navigator.notification) {
-					navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Outstanding Jobs', 'Ok');
-				}else{
-					alert("No Data found");
-					setTimeout(function(){history.back()});
-				}				
-			}
-      },
-      error: function(jqXHR, textStatus, errorThrown)
-      {
-        //if fails
-		hideLoader();
-		/*if(navigator.notification) {
+           /*data = {"to_ivr":[{"cont_nr":2203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290},{"cont_nr":7203242,"del_terr_cd":90,"cont_inv_nr":377147913,"dist_nr":2203247,"first_nm":"Sergio","last_nm":"Rossi","old_cont_inv_nr":null,"start_dtime":"\/Date(1382360400000)\/","end_dtime":"\/Date(1382446800000)\/","dist_net_cd":"C","batch":179494,"area_cd":290}]};*/
+           outstandingListRequestInProgress = false;
+           if(data.to_ivr && data.to_ivr.length)
+           {
+           var outstanding_jobs_template = $("#outstanding_jobs_template").html();
+           
+           //console.log(audit_template_html);
+           var html = "";
+           var tempHTML = "";
+           $.each(data.to_ivr, function(i,outstandingJobs){
+                  //console.log(JSON.stringify(audits));
+                  tempHTML =  outstanding_jobs_template;
+                  tempHTML = tempHTML.replace(/{{AREA_CD}}/gi, outstandingJobs.area_cd);
+                  tempHTML = tempHTML.replace(/{{CONT_INV_NR}}/gi, outstandingJobs.cont_inv_nr);
+                  tempHTML = tempHTML.replace(/{{CONT_NR}}/gi, outstandingJobs.cont_nr);
+                  tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, outstandingJobs.dist_nr);
+                  
+                  
+                  tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, outstandingJobs.del_terr_cd);
+                  tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, outstandingJobs.dist_net_cd);
+                  
+                  if(localStorage.getItem("outstandingjob_filter")== null) {
+                  if(selectAreaList.indexOf(outstandingJobs.area_cd) == -1) {
+                  selectAreaList.push(outstandingJobs.area_cd);
+                  }
+                  localStorage.setItem("outstandingJobSelectAreaList",JSON.stringify(selectAreaList));
+                  html += tempHTML;
+                  }else if(outstandingJobs.area_cd == localStorage.getItem("outstandingjob_filter")) {
+                  html += tempHTML;
+                  }
+                  //if(i == 0) console.log(html);
+                  });
+           $("#outstanding_jobs_content").html( html );
+           hideLoader();
+           
+           
+           /*** Keep a copy in local Database ***/
+           
+           serviceResponseForOutstandingJobs = data.to_ivr;
+           if(savingOutstandingListDataToDb == false) {
+           savingOutstandingListDataToDb = true;
+           localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+           localDatabaseInstance.transaction(dropOutstandingJobsTable, function(){savingOutstandingListDataToDb = false}, dropOutstandingJobsTableComplete);
+           }
+           /*** Keep a copy in local Database ***/
+           
+           //console.log(selectAreaList);
+           //console.log('Local Storage '+localStorage.getItem("selectAreaList"));
+           
+           }else {
+           outstandingListRequestInProgress = false;
+           /**/
+           localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+           localDatabaseInstance.transaction(dropOutstandingJobsTable, null, null);
+           /**/
+           hideLoader();
+           if(navigator.notification) {
+           navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Outstanding Jobs', 'Ok');
+           }else{
+           alert("No Data found");
+           setTimeout(function(){history.back()});
+           }
+           }
+           },
+           error: function(jqXHR, textStatus, errorThrown)
+           {
+           //if fails
+           hideLoader();
+           /*if(navigator.notification) {
 			navigator.notification.alert("Network Connection Error "+errorThrown, function(){history.back()}, 'Outstanding Jobs', 'Ok');
-		}else{
+            }else{
 			alert("Network Connection Error "+errorThrown);
-		}*/
-		readJobsFromDatabase();
-      }
-	});
+            }*/
+           readJobsFromDatabase();
+           }
+           });
 }
 
 function readJobsFromDatabase()
-{		 
+{
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	localDatabaseInstance.transaction(queryreadJobs, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});
 }
@@ -1597,8 +1620,8 @@ function jobsSuccessOffline(tx, results) {
 	var len = results.rows.length;
     console.log("OUTSTANDING JOBS table: " + len + " rows found.");
 	if(len > 0) {
-	
-		var selectAreaList = new Array();		
+        
+		var selectAreaList = new Array();
 		var outstanding_jobs_template = $("#outstanding_jobs_template").html();
 		//console.log(audit_template_html);
 		var html = "";
@@ -1615,20 +1638,20 @@ function jobsSuccessOffline(tx, results) {
 			tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, results.rows.item(i).del_terr_cd);
 			tempHTML = tempHTML.replace(/{{DIST_NET_CD}}/gi, results.rows.item(i).dist_net_cd);
 			
-			if(localStorage.getItem("outstandingjob_filter")== null) {					
+			if(localStorage.getItem("outstandingjob_filter")== null) {
 				if(selectAreaList.indexOf(results.rows.item(i).area_cd) == -1) {
 					selectAreaList.push(results.rows.item(i).area_cd);
 				}
 				localStorage.setItem("outstandingJobSelectAreaList",JSON.stringify(selectAreaList));
 				html += tempHTML;
 			}else if(results.rows.item(i).area_cd == localStorage.getItem("outstandingjob_filter")) {
-				html += tempHTML;											
+				html += tempHTML;
 			}
 		}
 		$("#outstanding_jobs_content").html( html );
 	}else{
 		if(navigator.notification) {
-					navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Outstanding Jobs', 'Ok');
+            navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Outstanding Jobs', 'Ok');
 		}else{
 			alert("No Data found");
 			setTimeout(function(){history.back()});
@@ -1637,7 +1660,7 @@ function jobsSuccessOffline(tx, results) {
 }
 
 function populateSelectList()
-{		
+{
 	var selectArray = new Array();
 	
 	if(localStorage.getItem('screen')== 'delivery_audit') {
@@ -1646,11 +1669,11 @@ function populateSelectList()
 		selectArray = localStorage.getItem("querySelectAreaList");
 	}else if(localStorage.getItem('screen')== 'Outstandingjob') {
 		selectArray = localStorage.getItem("outstandingJobSelectAreaList");
-	}	
-	$.each(JSON.parse(selectArray), function(i,area){	
-		
-		$("#select_area_list").append('<div class="row-fluid"><div class="span10 offset1 area_list" onClick="filterData('+area+')">'+area+'</div></div>');		
-	});	
+	}
+	$.each(JSON.parse(selectArray), function(i,area){
+           
+           $("#select_area_list").append('<div class="row-fluid"><div class="span10 offset1 area_list" onClick="filterData('+area+')">'+area+'</div></div>');
+           });
 }
 
 function filterData(area)
@@ -1662,7 +1685,7 @@ function filterData(area)
 			localStorage.setItem('query_filter',area);
 		}else if(localStorage.getItem('screen')== 'Outstandingjob') {
 			localStorage.setItem('outstandingjob_filter',area);
-		}		
+		}
 	}else{
 		if(localStorage.getItem('screen')== 'delivery_audit') {
 			localStorage.removeItem('delivery_filter');
@@ -1672,7 +1695,7 @@ function filterData(area)
 			localStorage.removeItem('outstandingjob_filter');
 		}
 	}
-	goTo(localStorage.getItem('screen'));	
+	goTo(localStorage.getItem('screen'));
 }
 
 function catalogfilter(filterType)
@@ -1684,16 +1707,16 @@ function catalogfilter(filterType)
 		localStorage.removeItem('delivery_catalog_filter');
 	}
 	$("#overlay .calagory").css("background","url(images/category_bg2.png) center center repeat-y");
-	setTimeout(function(){$("#overlay #"+filterType).css("background","url(images/category_hover2.png)  center center repeat-y");});	
-	getAuditList();	
+	setTimeout(function(){$("#overlay #"+filterType).css("background","url(images/category_hover2.png)  center center repeat-y");});
+	getAuditList();
 }
 
 
 function getQueryList()
 {
 	/*
-	{"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]}	
-	*/
+     {"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]}
+     */
 	
 	//$("#query").css({'background': 'url(images/tr_bg1.png)', 'height': $(this).height()});
 	localStorage.setItem("screen","Query");
@@ -1704,97 +1727,97 @@ function getQueryList()
 	queryList = [];
 	queryListRequestInProgress = true;
 	$.ajax({
-	  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetQueryToPdaByManager",
-	  type: "POST",
-	  timeout: 60000 ,
-	  data: {dist_nr: localStorage.getItem("dist_nr")},
-	  dataType: 'json',
-	  success:function(data, textStatus, jqXHR)
-      {
-			//console.log(data.hasOwnProperty("dist_nrr"));from_ivr	
-			downloadReasons();
-			/*data = {"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]};*/
-			queryListRequestInProgress = false;
-			if(data.queries_to_pda && data.queries_to_pda.length)
-			{				
-				queryList = data;				
-				var query_template = $("#query_template").html();
-				//console.log(audit_template_html);
-				var html = "";
-				var tempHTML = "";
-				var queryCount = 0;
-				$.each(data.queries_to_pda, function(i,query){
-					//console.log(JSON.stringify(audits));
-					tempHTML =  query_template;
-					tempHTML = tempHTML.replace(/{{QUERY_NR}}/gi, query.query_nr);
-					tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, query.query_area_details);
-					tempHTML = tempHTML.replace(/{{QUERY_DETAIL}}/gi, query.query_detail);
-					tempHTML = tempHTML.replace(/{{QUERY_JOB_NR}}/gi, query.query_job_nr);
-					tempHTML = tempHTML.replace(/{{QUERY_JOB_DESC}}/gi, query.query_job_desc);
-					tempHTML = tempHTML.replace(/{{DATE_WINDOW}}/gi,  moment(query.query_job_dtime).format("DD MMM YYYY"));
-					tempHTML = tempHTML.replace(/{{ROW_INDEX}}/gi, queryCount);
-					
-					var area_details = query.query_area_details;
-					
-					var parts = area_details.split("/");
-					
-					if(localStorage.getItem("query_filter")== null) {					
-						if(selectAreaList.indexOf(parts[0]) == -1) {
-							selectAreaList.push(parts[0]);
-						}
-						localStorage.setItem("querySelectAreaList",JSON.stringify(selectAreaList));			
-						html += tempHTML;						
-						queryCount++;
-					}else if(parts[0] == localStorage.getItem("query_filter")) {
-						html += tempHTML;
-						queryCount++;											
-					}					
-					//tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, query.del_terr_cd);					
-				});
-                $("#query_count").html("("+queryCount+")");				
-				$("#query_content").html( html );
-				hideLoader();
-				
-				/*** Keep a copy of the data to local database  ***/
-				serviceResponseForQuery = data.queries_to_pda;
-				if(savingQueryListDataToDb == false) {
-					savingQueryListDataToDb = true;			
-					localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-					localDatabaseInstance.transaction(dropQueryTable, function(){savingQueryListDataToDb = false}, dropQueryTableComplete);
-				}
-				/*** Keep a copy of the data to local database  ***/
-				
-			}else {
-				queryListRequestInProgress = false;
-                hideLoader();
-                localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-                localDatabaseInstance.transaction(dropQueryTable, null, null);
-				if(navigator.notification) {
-					navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Query Inbox', 'Ok');
-				}else{
-					alert("No Data found");
-					setTimeout(function(){history.back()});
-				}				
-			}
-      },
-      error: function(jqXHR, textStatus, errorThrown)
-      {
-        //if fails
-		hideLoader();
-		/*if(navigator.notification) {
+           url: demo_service_url+"GetQueryToPdaByManager",
+           type: "POST",
+           timeout: 60000 ,
+           data: {dist_nr: localStorage.getItem("dist_nr")},
+           dataType: 'json',
+           success:function(data, textStatus, jqXHR)
+           {
+           //console.log(data.hasOwnProperty("dist_nrr"));from_ivr
+           downloadReasons();
+           /*data = {"queries_to_pda":[{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007},{"query_nr":728335,"dist_nr":3050234,"dist_net_cd":"N","query_job_nr":721795,"query_job_desc":"Job 721795 HOBSONS BAY LEADER [08 Oct 2013 to 09 Oct 2013] for 10 Oct 2013","query_job_dtime":"\/Date(1381064400000)\/","query_reported_dtime":"\/Date(1381804613240)\/","query_area_details":"159/24","query_type_desc":"Non delivery","query_detail":"no delivery for 3 years -|- Please investigate and respond within 72 hours. Thanks.","str_nr":"11/76","str_nm":"POINT COOK","str_type_cd":"RD","sub_nm":"SEABROOK","pc_cd":"3028","batch":141007}]};*/
+           queryListRequestInProgress = false;
+           if(data.queries_to_pda && data.queries_to_pda.length)
+           {
+           queryList = data;
+           var query_template = $("#query_template").html();
+           //console.log(audit_template_html);
+           var html = "";
+           var tempHTML = "";
+           var queryCount = 0;
+           $.each(data.queries_to_pda, function(i,query){
+                  //console.log(JSON.stringify(audits));
+                  tempHTML =  query_template;
+                  tempHTML = tempHTML.replace(/{{QUERY_NR}}/gi, query.query_nr);
+                  tempHTML = tempHTML.replace(/{{DIST_NR}}/gi, query.query_area_details);
+                  tempHTML = tempHTML.replace(/{{QUERY_DETAIL}}/gi, query.query_detail);
+                  tempHTML = tempHTML.replace(/{{QUERY_JOB_NR}}/gi, query.query_job_nr);
+                  tempHTML = tempHTML.replace(/{{QUERY_JOB_DESC}}/gi, query.query_job_desc);
+                  tempHTML = tempHTML.replace(/{{DATE_WINDOW}}/gi,  moment(query.query_job_dtime).format("DD MMM YYYY"));
+                  tempHTML = tempHTML.replace(/{{ROW_INDEX}}/gi, queryCount);
+                  
+                  var area_details = query.query_area_details;
+                  
+                  var parts = area_details.split("/");
+                  
+                  if(localStorage.getItem("query_filter")== null) {
+                  if(selectAreaList.indexOf(parts[0]) == -1) {
+                  selectAreaList.push(parts[0]);
+                  }
+                  localStorage.setItem("querySelectAreaList",JSON.stringify(selectAreaList));
+                  html += tempHTML;
+                  queryCount++;
+                  }else if(parts[0] == localStorage.getItem("query_filter")) {
+                  html += tempHTML;
+                  queryCount++;
+                  }
+                  //tempHTML = tempHTML.replace(/{{DEL_TERR_CD}}/gi, query.del_terr_cd);
+                  });
+           $("#query_count").html("("+queryCount+")");
+           $("#query_content").html( html );
+           hideLoader();
+           
+           /*** Keep a copy of the data to local database  ***/
+           serviceResponseForQuery = data.queries_to_pda;
+           if(savingQueryListDataToDb == false) {
+           savingQueryListDataToDb = true;
+           localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+           localDatabaseInstance.transaction(dropQueryTable, function(){savingQueryListDataToDb = false}, dropQueryTableComplete);
+           }
+           /*** Keep a copy of the data to local database  ***/
+           
+           }else {
+           queryListRequestInProgress = false;
+           hideLoader();
+           localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
+           localDatabaseInstance.transaction(dropQueryTable, null, null);
+           if(navigator.notification) {
+           navigator.notification.alert("No Data found", function(){goBack('menu')}, 'Query Inbox', 'Ok');
+           }else{
+           alert("No Data found");
+           setTimeout(function(){history.back()});
+           }
+           }
+           },
+           error: function(jqXHR, textStatus, errorThrown)
+           {
+           //if fails
+           hideLoader();
+           /*if(navigator.notification) {
 			navigator.notification.alert("Network Connection Error "+errorThrown, function(){history.back()}, 'Query Inbox', 'Ok');
-		}else{
+            }else{
 			alert("Network Connection Error "+errorThrown);
-		}*/
-		readQueryListFromDatabase();		
-      }
-	});
+            }*/
+           readQueryListFromDatabase();
+           }
+           });
 }
 
 function readQueryListFromDatabase()
-{		 
+{
 	localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
-	localDatabaseInstance.transaction(queryReadQueryList, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});		
+	localDatabaseInstance.transaction(queryReadQueryList, function(err){console.log("Error processing SQL: "+err.code+' '+err.message)});
 }
 
 function queryReadQueryList(tx) {
@@ -1865,80 +1888,80 @@ function queryListSuccessOffline(tx,results)
 var queryConfirmations = [];
 
 /*
-<queryFromPdaId>string</queryFromPdaId>
-      <queryNr>int</queryNr>
-      <deviceDateTime>string</deviceDateTime>
-      <utcTime>string</utcTime>
-      <reasonTypeDesc>string</reasonTypeDesc>
-      <distComments>string</distComments>
-      <strNr>string</strNr>
-      <strNm>string</strNm>
-      <strTypeCd>string</strTypeCd>
-      <subNm>string</subNm>
-      <pcCd>string</pcCd>
-      <latitude>double</latitude>
-      <longitude>double</longitude>
-*/
+ <queryFromPdaId>string</queryFromPdaId>
+ <queryNr>int</queryNr>
+ <deviceDateTime>string</deviceDateTime>
+ <utcTime>string</utcTime>
+ <reasonTypeDesc>string</reasonTypeDesc>
+ <distComments>string</distComments>
+ <strNr>string</strNr>
+ <strNm>string</strNm>
+ <strTypeCd>string</strTypeCd>
+ <subNm>string</subNm>
+ <pcCd>string</pcCd>
+ <latitude>double</latitude>
+ <longitude>double</longitude>
+ */
 
 function queryConfirmationObject(guid, query_nr,device_time,utc_time,reason_desc,dist_comments,str_nr,str_nm,str_type_cd,sub_nm,pc_cd,lat,lng) {
-  this.queryFromPdaId = guid;
-  this.queryNr = query_nr;
-  this.deviceDateTime = device_time;
-  this.utcTime = utc_time;
-  this.reasonTypeDesc = reason_desc;
-  this.distComments = dist_comments;
-  this.strNr = str_nr;
-  this.strNm = str_nm;
-  this.strTypeCd = str_type_cd;
-  this.subNm = sub_nm;
-  this.pcCd = pc_cd;
-  this.latitude = lat;
-  this.longitude = lng;
+    this.queryFromPdaId = guid;
+    this.queryNr = query_nr;
+    this.deviceDateTime = device_time;
+    this.utcTime = utc_time;
+    this.reasonTypeDesc = reason_desc;
+    this.distComments = dist_comments;
+    this.strNr = str_nr;
+    this.strNm = str_nm;
+    this.strTypeCd = str_type_cd;
+    this.subNm = sub_nm;
+    this.pcCd = pc_cd;
+    this.latitude = lat;
+    this.longitude = lng;
 }
 
 function query_confirmation_action() {
-    var filename = $("#location_status_icon").attr("src");	
+    var filename = $("#location_status_icon").attr("src");
 	var splitArray = filename.split("/");
 	var image = splitArray[splitArray.length-1];
 	if(image == 'location_available.png') {
 	    var count = parseInt(localStorage.getItem("query_confirmation_count"));
 		if(count < 9) {
 			//showLoader();
-			count++;			
+			count++;
 			//var lat = "30";//position.coords.latitude;
-			//var lng = "40";//position.coords.longitude	yyyy-mm-dd HH:MM:SS			 
+			//var lng = "40";//position.coords.longitude	yyyy-mm-dd HH:MM:SS
 			navigator.geolocation.getCurrentPosition(function(position){
-				var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
-				var queryObj = JSON.parse(localStorage.getItem("query_item"));
-				queryConfirmations.push(new queryConfirmationObject(guid, queryObj.query_nr,moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),$("#reason_desc_editable").val(),"",$("#str_nr").val(),$("#str_nm").val(),queryObj.str_type_cd,$("#sub_nm").val(),queryObj.pc_cd,position.coords.latitude,position.coords.longitude));
-				localStorage.setItem("address_checks",JSON.stringify(queryConfirmations));
-				localStorage.setItem("query_confirmation_count",count);
-				$("#query_confirmation_count").text(count);
-				//hideLoader();
-			}, function(error){
-				//hideLoader();
-				navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
-			} , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
+                                                     var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+                                                     var queryObj = JSON.parse(localStorage.getItem("query_item"));
+                                                     queryConfirmations.push(new queryConfirmationObject(guid, queryObj.query_nr,moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),$("#reason_desc_editable").val(),"",$("#str_nr").val(),$("#str_nm").val(),queryObj.str_type_cd,$("#sub_nm").val(),queryObj.pc_cd,position.coords.latitude,position.coords.longitude));
+                                                     localStorage.setItem("address_checks",JSON.stringify(queryConfirmations));
+                                                     localStorage.setItem("query_confirmation_count",count);
+                                                     $("#query_confirmation_count").text(count);
+                                                     //hideLoader();
+                                                     }, function(error){
+                                                     //hideLoader();
+                                                     navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
+                                                     } , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
 			
 		}else{
 			/*if(navigator.notification) {
-				navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
-			}else{
-				alert("You can confirm maximum 6 times");						
-			}*/
+             navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
+             }else{
+             alert("You can confirm maximum 6 times");
+             }*/
 			if($("#check_submit_btn").hasClass("input_bg")) {
 				$("#check_submit_btn").removeClass("input_bg");
 			}
 			if(!$("#check_submit_btn").hasClass("disable")) {
 				$("#check_submit_btn").addClass("disable");
 			}
-		}		
+		}
 	}else{
 		/*if(navigator.notification) {
-				navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
-		}else{
-				alert("Location not available.Please try again");						
-		}*/
+         navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
+         }else{
+         alert("Location not available.Please try again");
+         }*/
 	}
 }
 
@@ -1962,33 +1985,33 @@ function submitQueryInformation()
 	showLoader();
 	//console.log(JSON.stringify(queryConfirmations));
 	for (var i=0; i<queryConfirmations.length; i++) {
-	  queryConfirmations[i].distComments = $("#query_comment_desc").val();		
+        queryConfirmations[i].distComments = $("#query_comment_desc").val();
 	}
-	if(queryConfirmations.length > 0) {		
+	if(queryConfirmations.length > 0) {
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/SubmitQuery",
-		  type: "POST",
-		  timeout: 60000 ,
-		  data: queryConfirmations[0],
-		  success:function(data, textStatus, jqXHR)
-		  {		
-			//success callback			
-			//alert('Delivery Checks success'+data.Count);
-			queryConfirmations.shift();
-			if(queryConfirmations.length == 0) {
-				hideLoader();
-				//goBack('delivery_audit');
-				goTo('Query');
-			}else{
-				setTimeout('submitQueryInformation()',0);
-			}
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {
-			 //hideLoader();
-			 storeFailedQuerySubmit();			
-		   }	  
-		});	
+               url: demo_service_url+"SubmitQuery",
+               type: "POST",
+               timeout: 60000 ,
+               data: queryConfirmations[0],
+               success:function(data, textStatus, jqXHR)
+               {
+               //success callback
+               //alert('Delivery Checks success'+data.Count);
+               queryConfirmations.shift();
+               if(queryConfirmations.length == 0) {
+               hideLoader();
+               //goBack('delivery_audit');
+               goTo('Query');
+               }else{
+               setTimeout('submitQueryInformation()',0);
+               }
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               {
+               //hideLoader();
+               storeFailedQuerySubmit();
+               }
+               });
 	}else{
 		hideLoader();
 		goTo('Query');
@@ -1999,19 +2022,19 @@ function storeFailedQuerySubmit()
 {
 	console.log(JSON.stringify(queryConfirmations));
 	if(savingQuerySubmitDataToDb == false) {
-		savingQuerySubmitDataToDb = true;			
+		savingQuerySubmitDataToDb = true;
 		localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 		localDatabaseInstance.transaction(createQuerySubmitTable, function(){savingQuerySubmitDataToDb = false}, createQuerySubmitTableComplete);
 	}
 }
 
 function createQuerySubmitTable(tx) {
-	 //tx.executeSql('DROP TABLE IF EXISTS QUERIES');
-	 //tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
-	 //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
-	 //tx.executeSql('DROP TABLE IF EXISTS QUERYSUBMIT');
-	 //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_CHECKS');
-	 tx.executeSql('CREATE TABLE IF NOT EXISTS QUERYSUBMIT (queryFromPdaId, queryNr, deviceDateTime, utcTime, reasonTypeDesc, distComments, strNr, strNm, strTypeCd, subNm, pcCd, latitude, longitude)');  
+    //tx.executeSql('DROP TABLE IF EXISTS QUERIES');
+    //tx.executeSql('DROP TABLE IF EXISTS OUTSTANDINGJOBS');
+    //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_AUDIT');
+    //tx.executeSql('DROP TABLE IF EXISTS QUERYSUBMIT');
+    //tx.executeSql('DROP TABLE IF EXISTS DELIVERY_CHECKS');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS QUERYSUBMIT (queryFromPdaId, queryNr, deviceDateTime, utcTime, reasonTypeDesc, distComments, strNr, strNm, strTypeCd, subNm, pcCd, latitude, longitude)');
 }
 
 function createQuerySubmitTableComplete() {
@@ -2026,14 +2049,14 @@ function saveQuerySubmitDataToDb(queryConfirmations,l)
 		console.log("queryConfirmations Length : " + queryConfirmations.length + " l : " + l);
         localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
         localDatabaseInstance.transaction(function insertUserPrefDB(tx) {
-            tx.executeSql("INSERT INTO QUERYSUBMIT (queryFromPdaId, queryNr, deviceDateTime, utcTime, reasonTypeDesc, distComments, strNr, strNm, strTypeCd, subNm, pcCd, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? )",
-              [queryConfirmations[l].queryFromPdaId, queryConfirmations[l].queryNr, queryConfirmations[l].deviceDateTime, queryConfirmations[l].utcTime, queryConfirmations[l].reasonTypeDesc, queryConfirmations[l].distComments, queryConfirmations[l].strNr, queryConfirmations[l].strNm, queryConfirmations[l].strTypeCd, queryConfirmations[l].subNm,queryConfirmations[l].pcCd, queryConfirmations[l].latitude, queryConfirmations[l].longitude],function(){},function(err){
-			  console.log("Error processing SQL: "+err.code+' '+err.message);
-			  savingQuerySubmitDataToDb = false});
-        }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);savingQuerySubmitDataToDb = false}, function successCB() {
-            /* Recursive Function For Inserting the State in Local Db */
-            saveQuerySubmitDataToDb(queryConfirmations, (l + 1));
-        });
+                                          tx.executeSql("INSERT INTO QUERYSUBMIT (queryFromPdaId, queryNr, deviceDateTime, utcTime, reasonTypeDesc, distComments, strNr, strNm, strTypeCd, subNm, pcCd, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,? ,? )",
+                                                        [queryConfirmations[l].queryFromPdaId, queryConfirmations[l].queryNr, queryConfirmations[l].deviceDateTime, queryConfirmations[l].utcTime, queryConfirmations[l].reasonTypeDesc, queryConfirmations[l].distComments, queryConfirmations[l].strNr, queryConfirmations[l].strNm, queryConfirmations[l].strTypeCd, queryConfirmations[l].subNm,queryConfirmations[l].pcCd, queryConfirmations[l].latitude, queryConfirmations[l].longitude],function(){},function(err){
+                                                        console.log("Error processing SQL: "+err.code+' '+err.message);
+                                                        savingQuerySubmitDataToDb = false});
+                                          }, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);savingQuerySubmitDataToDb = false}, function successCB() {
+                                          /* Recursive Function For Inserting the State in Local Db */
+                                          saveQuerySubmitDataToDb(queryConfirmations, (l + 1));
+                                          });
     }
     else {
 		savingQuerySubmitDataToDb = false;
@@ -2045,8 +2068,8 @@ function saveQuerySubmitDataToDb(queryConfirmations,l)
 		console.log("Remove Query from database "+queryObj.query_nr);
 	    localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 	    localDatabaseInstance.transaction(function removeAudit(tx) {
-		sql = "DELETE FROM QUERIES WHERE query_nr = " + queryObj.query_nr;
-		tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);goBack('delivery_audit')}, function(){goTo('Query')});	   	
+                                          sql = "DELETE FROM QUERIES WHERE query_nr = " + queryObj.query_nr;
+                                          tx.executeSql(sql),function(){},function(){}}, function(err){console.log("Error processing SQL: "+err.code+' '+err.message);goBack('delivery_audit')}, function(){goTo('Query')});	   	
 	}
 }
 
@@ -2057,10 +2080,10 @@ function prepareSavedQueriesSubmit()
 		if(networkState != Connection.NONE) {	 
 			localDatabaseInstance = openDatabase("PMP Database", "1.0", "PMP Database", 200000);
 			localDatabaseInstance.transaction(function querySavedQueries(tx) {
-					tx.executeSql('SELECT * FROM QUERYSUBMIT', [], submitSavedQueries, function(err){console.log("No Queries for submission");
-					//clearInterval(submitQueriesCron);
-					});
-			});
+                                              tx.executeSql('SELECT * FROM QUERYSUBMIT', [], submitSavedQueries, function(err){console.log("No Queries for submission");
+                                                            //clearInterval(submitQueriesCron);
+                                                            });
+                                              });
 		}
 	}
 }
@@ -2081,24 +2104,24 @@ function startSubmittingQueries(results,counter)
 		var tempObj = new queryConfirmationObject(results.rows.item(counter).queryFromPdaId, results.rows.item(counter).queryNr, results.rows.item(counter).deviceDateTime, results.rows.item(counter).utcTime,results.rows.item(counter).reasonTypeDesc,results.rows.item(counter).distComments,results.rows.item(counter).strNr,results.rows.item(counter).strNm,results.rows.item(counter).strTypeCd,results.rows.item(counter).subNm,results.rows.item(counter).pcCd,results.rows.item(counter).latitude,results.rows.item(counter).longitude);
 		//console.log(tempObj);
 		$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/SubmitQuery",
-		  type: "POST",
-		  timeout: 60000 ,
-		  data: tempObj,
-		  success:function(data, textStatus, jqXHR)
-		  {		
-			submittedQueries.push(results.rows.item(counter).queryFromPdaId);	
-			setTimeout(function(){startSubmittingQueries(results,(counter+1))});					
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {				
-			//submittedQueries.push(results.rows.item(counter).queryFromPdaId);	
-			setTimeout(function(){startSubmittingQueries(results,(counter+1))});				
-		  }	  
-	   });
-   }else{
+               url: demo_service_url+"SubmitQuery",
+               type: "POST",
+               timeout: 60000 ,
+               data: tempObj,
+               success:function(data, textStatus, jqXHR)
+               {		
+               submittedQueries.push(results.rows.item(counter).queryFromPdaId);	
+               setTimeout(function(){startSubmittingQueries(results,(counter+1))});					
+               },
+               error: function(jqXHR, textStatus, errorThrown)
+               {				
+               //submittedQueries.push(results.rows.item(counter).queryFromPdaId);	
+               setTimeout(function(){startSubmittingQueries(results,(counter+1))});				
+               }	  
+               });
+    }else{
 		removeSubmitedQueries();
-   }
+    }
 }
 
 function removeSubmitedQueries()
@@ -2138,8 +2161,8 @@ function populateReasons()
 	{				
 		var options = ""
 		$.each(data.reason_type, function(i,reason){
-			options+="<option value='"+reason.reason_type_desc+"'>"+reason.reason_type_desc+"</option>";
-		});
+               options+="<option value='"+reason.reason_type_desc+"'>"+reason.reason_type_desc+"</option>";
+               });
 		//console.log(options);
 		$("#reason_desc_editable").append(options);
 	}			
@@ -2147,17 +2170,17 @@ function populateReasons()
 
 function downloadReasons() {
 	$.ajax({
-		  url: "https://support.mobiliseit.com/PMP/PDAservice.asmx/GetReasons ",
-		  timeout: 60000 ,
-		  async: false,
-		  dataType: "json",
-		  success:function(data, textStatus, jqXHR)
-		  {			
-			localStorage.setItem('reasons',JSON.stringify(data));						
-		  },
-		  error: function(jqXHR, textStatus, errorThrown)
-		  {}	  
-	});
+           url: demo_service_url+"GetReasons ",
+           timeout: 60000 ,
+           async: false,
+           dataType: "json",
+           success:function(data, textStatus, jqXHR)
+           {			
+           localStorage.setItem('reasons',JSON.stringify(data));						
+           },
+           error: function(jqXHR, textStatus, errorThrown)
+           {}	  
+           });
 }
 
 function freecheck_confirmation_action() {
@@ -2173,143 +2196,143 @@ function freecheck_confirmation_action() {
 			//var lat = "30";//position.coords.latitude;
 			//var lng = "40";//position.coords.longitude	yyyy-mm-dd HH:MM:SS			 
 			navigator.geolocation.getCurrentPosition(function(position){
-				var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
-				freeCheckConfirmations.push(new deliveryCheckObject(guid, unique_identifier, localStorage.getItem("dist_nr"), localStorage.getItem("distName"),moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),localStorage.getItem("freecheck_dist_net_cd"),localStorage.getItem("AUDIT_CW"),localStorage.getItem("AUDIT_DT"),position.coords.latitude,position.coords.longitude));
-				localStorage.setItem("free_checks",JSON.stringify(freeCheckConfirmations));
-				localStorage.setItem("freecheck_confirmation_count",count);
-				$("#freecheck_confirmation_count").text(count);
-				//hideLoader();
-                if(count == 6) {
-                     if(!$("#check_submit_btn").hasClass("disable")) {
-                     $("#check_submit_btn").addClass("disable");
-                     }
-                }
-			}, function(error){
-				//hideLoader();
-				if(navigator.notification) {
-					navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
-				}else{
-					alert("Could not retrieve current location due to "+error.message);
-				}
-			} , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
+                                                     var guid = (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
+                                                     freeCheckConfirmations.push(new deliveryCheckObject(guid, unique_identifier, localStorage.getItem("dist_nr"), localStorage.getItem("distName"),moment().format("YYYY-MM-DD HH:MM:ss"),moment().format("YYYY-MM-DD HH:MM:ss"),localStorage.getItem("freecheck_dist_net_cd"),localStorage.getItem("AUDIT_CW"),localStorage.getItem("AUDIT_DT"),position.coords.latitude,position.coords.longitude));
+                                                     localStorage.setItem("free_checks",JSON.stringify(freeCheckConfirmations));
+                                                     localStorage.setItem("freecheck_confirmation_count",count);
+                                                     $("#freecheck_confirmation_count").text(count);
+                                                     //hideLoader();
+                                                     if(count == 6) {
+                                                     if(!$("#check_submit_btn").hasClass("disable")) {
+                                                     $("#check_submit_btn").addClass("disable");
+                                                     }
+                                                     }
+                                                     }, function(error){
+                                                     //hideLoader();
+                                                     if(navigator.notification) {
+                                                     navigator.notification.alert("Could not retrieve current location due to "+error.message, null, 'Delivery Checks', 'Ok');
+                                                     }else{
+                                                     alert("Could not retrieve current location due to "+error.message);
+                                                     }
+                                                     } , {  maximumAge: 3000, timeout: 10000, enableHighAccuracy: true });
 			
 		}else{
 			/*if(navigator.notification) {
-				navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
-			}else{
-				alert("You can confirm maximum 6 times");						
-			}*/
+             navigator.notification.alert("You can confirm maximum 6 times", null, 'Delivery Checks', 'Ok');
+             }else{
+             alert("You can confirm maximum 6 times");						
+             }*/
 			/*if($("#check_submit_btn").hasClass("input_bg")) {
-				$("#check_submit_btn").removeClass("input_bg");
-			}*/
+             $("#check_submit_btn").removeClass("input_bg");
+             }*/
 			if(!$("#check_submit_btn").hasClass("disable")) {
 				$("#check_submit_btn").addClass("disable");
 			}
 		}		
 	}else{
 		/*if(navigator.notification) {
-				navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
-		}else{
-				alert("Location not available.Please try again");						
-		}*/
+         navigator.notification.alert("Location not available.Please try again", null, 'Delivery Checks', 'Ok');
+         }else{
+         alert("Location not available.Please try again");						
+         }*/
 	}
 }
 
 $(document).on("pageshow", "#delivery_audit", function( event ) {
-    if(localStorage.getItem("delivery_catalog_filter")!= null) {
-      localStorage.removeItem('delivery_catalog_filter');
-    }
-    getAuditList();
-});
+               if(localStorage.getItem("delivery_catalog_filter")!= null) {
+               localStorage.removeItem('delivery_catalog_filter');
+               }
+               getAuditList();
+               });
 
 $(document).on("pagebeforeshow", "#delivery_check", function( event ) {
-	getAuditDetail();
-    deliveryCheckConfirmations = [];	
-});
+               getAuditDetail();
+               deliveryCheckConfirmations = [];	
+               });
 
 $(document).on("pageshow", "#query", function( event ) {
-	getQueryList();
-});
+               getQueryList();
+               });
 
 $(document).on("pageshow", "#Outstandingjob", function( event ) {
-	getOutstandingJobs();
-});
+               getOutstandingJobs();
+               });
 
 $(document).on("pageshow", "#selectarea", function( event ) {
-	populateSelectList();
-});
+               populateSelectList();
+               });
 
 $(document).on("pageshow", "#settings", function( event ) {
-	$(".settings_icon").click(function(){
-		$(this).toggleClass("thikbg");
-			if($(this).attr("id") == "play_audit_sound") {
-				if($(this).hasClass("thikbg")) {
-					localStorage.setItem("play_audit_sound","yes");
-				}
-				else {
-					localStorage.setItem("play_audit_sound","no");
-				}
-			}else{
-				if($(this).hasClass("thikbg")) {
-					localStorage.setItem("play_query_sound","yes");
-				}
-				else {
-					localStorage.setItem("play_query_sound","no");
-				}
-			}					
-		});
-	setTimeout(function(){loadPreferences()});	
-});
+               $(".settings_icon").click(function(){
+                                         $(this).toggleClass("thikbg");
+                                         if($(this).attr("id") == "play_audit_sound") {
+                                         if($(this).hasClass("thikbg")) {
+                                         localStorage.setItem("play_audit_sound","yes");
+                                         }
+                                         else {
+                                         localStorage.setItem("play_audit_sound","no");
+                                         }
+                                         }else{
+                                         if($(this).hasClass("thikbg")) {
+                                         localStorage.setItem("play_query_sound","yes");
+                                         }
+                                         else {
+                                         localStorage.setItem("play_query_sound","no");
+                                         }
+                                         }					
+                                         });
+               setTimeout(function(){loadPreferences()});	
+               });
 
 $(document).on("pageshow", "#querydetails", function( event ) {
-    var queryObj = JSON.parse(localStorage.getItem("query_item"));
-	$("#job_desc_text").val(queryObj.query_job_desc);
-	$("#query_desc_textarea").val(queryObj.query_detail);	
-	checkDeviceStatus();
-});
+               var queryObj = JSON.parse(localStorage.getItem("query_item"));
+               $("#job_desc_text").val(queryObj.query_job_desc);
+               $("#query_desc_textarea").val(queryObj.query_detail);	
+               checkDeviceStatus();
+               });
 
 $(document).on("pageshow", "#addresscheck", function( event ) {
-	var queryObj = JSON.parse(localStorage.getItem("query_item"));
-	$("#str_nm_text").val(queryObj.str_nm);
-	$("#sub_nm_text").val(queryObj.sub_nm);
-	$("#reason_desc_readonly").html("<option value='"+queryObj.query_type_desc+"' selected='selected'>"+queryObj.query_type_desc+"</option>");
-	checkDeviceStatus();
-});
+               var queryObj = JSON.parse(localStorage.getItem("query_item"));
+               $("#str_nm_text").val(queryObj.str_nm);
+               $("#sub_nm_text").val(queryObj.sub_nm);
+               $("#reason_desc_readonly").html("<option value='"+queryObj.query_type_desc+"' selected='selected'>"+queryObj.query_type_desc+"</option>");
+               checkDeviceStatus();
+               });
 
 $(document).on("pageshow", "#addition_address", function( event ) {
-	localStorage.setItem("query_confirmation_count","0");
-	// Calls the selectBoxIt method on your HTML select box
-    /*$("select").selectBoxIt({
-	   native: true
-    });*/
-	populateReasons();
-	checkDeviceStatus();
-});
+               localStorage.setItem("query_confirmation_count","0");
+               // Calls the selectBoxIt method on your HTML select box
+               /*$("select").selectBoxIt({
+                native: true
+                });*/
+               populateReasons();
+               checkDeviceStatus();
+               });
 
 $(document).on("pageshow", "#query_comments", function( event ) {
-	checkDeviceStatus();
-});
+               checkDeviceStatus();
+               });
 
 $(document).on("pageshow", "#freecheck", function( event ) {
-	checkDeviceStatus();
-	localStorage.setItem("freecheck_confirmation_count","0");
-	freeCheckConfirmations = [];
-	var radioButton = $('.settings_icon');
-	$(radioButton).click(function(){
-            if(!$(this).hasClass('thikbg')){
-                $(this).addClass("thikbg");
-				//console.log($(this).attr("id"));
-				localStorage.setItem("freecheck_dist_net_cd",$(this).attr("id"));
-            }
-            $(radioButton).not(this).each(function(){
-                $(this).removeClass("thikbg");
-            });
-        });
-});
+               checkDeviceStatus();
+               localStorage.setItem("freecheck_confirmation_count","0");
+               freeCheckConfirmations = [];
+               var radioButton = $('.settings_icon');
+               $(radioButton).click(function(){
+                                    if(!$(this).hasClass('thikbg')){
+                                    $(this).addClass("thikbg");
+                                    //console.log($(this).attr("id"));
+                                    localStorage.setItem("freecheck_dist_net_cd",$(this).attr("id"));
+                                    }
+                                    $(radioButton).not(this).each(function(){
+                                                                  $(this).removeClass("thikbg");
+                                                                  });
+                                    });
+               });
 
 
 function loadPreferences() {
-
+    
 	if(localStorage.getItem("play_audit_sound")!= null && localStorage.getItem("play_audit_sound") == "yes") {	
 		if(!$("#play_audit_sound").hasClass("thikbg")) {
 			$("#play_audit_sound").toggleClass("thikbg");
@@ -2324,10 +2347,10 @@ function loadPreferences() {
 }
 
 /*$( document ).bind( "mobileinit", function() {
-    // Make your jQuery Mobile framework configuration changes here!
-    $.support.cors = true;
-    $.mobile.allowCrossDomainPages = true;
-});*/
+ // Make your jQuery Mobile framework configuration changes here!
+ $.support.cors = true;
+ $.mobile.allowCrossDomainPages = true;
+ });*/
 
 window.onorientationchange = function(){
     if($("#loaderOverlay #custom")) {
